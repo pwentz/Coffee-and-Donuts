@@ -7,6 +7,8 @@ import Json.Decode as Json
 import Mapbox.Maps.SlippyMap as Mapbox
 import Mapbox.Endpoint as Endpoint
 import Http as Http
+import Geolocation as Geo
+import Task
 import Secrets
 
 
@@ -43,13 +45,18 @@ type alias ShortAddressData =
 
 type alias Model =
     { venues : List ShortVenueData
+    , location : ShortAddressData
+    , waitingMsg : String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { venues = [] }
-    , fetchVenues
+    ( { venues = []
+      , waitingMsg = ""
+      , location = { lat = 0.0, lng = 0.0 }
+      }
+    , getLocationAndFetchVenues
     )
 
 
@@ -91,6 +98,9 @@ view model =
         [ h1
             []
             [ text "Coffee & Donuts" ]
+        , h5
+            []
+            [ text model.waitingMsg ]
         , div
             []
             [ embeddedSlippyMap ]
@@ -103,22 +113,30 @@ view model =
 
 type Msg
     = FetchVenues (Result Http.Error (List (List ShortVenueData)))
+    | GetLocation (Result Geo.Error Geo.Location)
 
 
-foursquareParams : String
-foursquareParams =
-    "?ll=40.7,-74&client_id="
-        ++ Secrets.foursquareClientId
-        ++ "&client_secret="
-        ++ Secrets.foursquareClientSecret
-        ++ "&limit=10&v=20170701&m=foursquare&section=donuts&openNow=1"
+getLocationAndFetchVenues : Cmd Msg
+getLocationAndFetchVenues =
+    Task.attempt GetLocation Geo.now
 
 
-fetchVenues : Cmd Msg
-fetchVenues =
+fetchVenues : Model -> Cmd Msg
+fetchVenues model =
     let
+        params =
+            "?ll="
+                ++ (toString model.location.lat)
+                ++ ","
+                ++ (toString model.location.lng)
+                ++ "&client_id="
+                ++ Secrets.foursquareClientId
+                ++ "&client_secret="
+                ++ Secrets.foursquareClientSecret
+                ++ "&limit=10&v=20170701&m=foursquare&section=donuts&openNow=1"
+
         url =
-            "https://api.foursquare.com/v2/venues/explore" ++ foursquareParams
+            "https://api.foursquare.com/v2/venues/explore" ++ params
 
         request =
             Http.get url foursquareVenuesDecoder
@@ -137,4 +155,27 @@ update msg model =
             )
 
         FetchVenues (Err _) ->
-            ( model, Cmd.none )
+            ( { model
+                | waitingMsg = "Something went wrong while we were getting venues!"
+              }
+            , Cmd.none
+            )
+
+        GetLocation (Err _) ->
+            ( { model
+                | waitingMsg = "We need your location for the app to function properly!"
+              }
+            , Cmd.none
+            )
+
+        GetLocation (Ok location) ->
+            let
+                updatedModel =
+                    { model
+                        | location =
+                            { lat = location.latitude
+                            , lng = location.longitude
+                            }
+                    }
+            in
+                ( updatedModel, (fetchVenues updatedModel) )
