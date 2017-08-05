@@ -8,6 +8,7 @@ import Json.Encode exposing (Value)
 import Http as Http
 import Geolocation as Geo
 import Task
+import Public
 import Secrets
 import Leaflet as L
 
@@ -319,12 +320,12 @@ update msg model =
                     , lat = location.latitude
                     , lng = location.longitude
                     , zoom = 16
-                    , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Secrets.mapboxToken
+                    , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
                     , tileLayerOptions =
                         { attribution = ""
                         , maxZoom = 22
                         , id = "mapbox.streets"
-                        , accessToken = Secrets.mapboxToken
+                        , accessToken = Public.mapboxToken
                         }
                     }
 
