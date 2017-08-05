@@ -1,0 +1,25 @@
+{
+  "name": "coffee-and-donuts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pwentz/Coffee-and-Donuts.git"
+  },
+  "author": "Pat Wentz <patrick.w.wentz@gmail.com> (https://github.com/pwentz)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pwentz/Coffee-and-Donuts/issues"
+  },
+  "homepage": "https://github.com/pwentz/Coffee-and-Donuts#readme",
+  "dependencies": {
+    "leaflet": "^1.1.0"
+  }
+}
