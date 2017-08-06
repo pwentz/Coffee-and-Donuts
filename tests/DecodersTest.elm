@@ -123,6 +123,8 @@ suite =
                                 Just
                                     { prefix = "https://something/img/"
                                     , suffix = "/1234/stuff.jpg"
+                                    , width = 640
+                                    , height = 640
                                     }
                             }
                     in

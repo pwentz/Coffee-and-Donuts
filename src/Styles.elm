@@ -15,6 +15,7 @@ contentColumn =
     styles
         [ float left
         , width (pct 25)
+        , textAlign center
         ]
 
 
@@ -50,6 +51,20 @@ defaultContent : Attribute msg
 defaultContent =
     styles
         [ textAlign center
+        ]
+
+
+venueBannerWrapper : Attribute msg
+venueBannerWrapper =
+    styles
+        [ margin auto ]
+
+
+venueBanner : Attribute msg
+venueBanner =
+    styles
+        [ height (vh 20)
+        , width (pct 95)
         ]
 
 

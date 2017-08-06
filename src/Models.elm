@@ -18,5 +18,11 @@ type alias FullVenueData =
     , rating : Maybe Float
     , popular : Maybe (List { day : String, hours : String })
     , attributes : Maybe (List String)
-    , bestPhoto : Maybe { prefix : String, suffix : String }
+    , bestPhoto :
+        Maybe
+            { prefix : String
+            , suffix : String
+            , width : Int
+            , height : Int
+            }
     }

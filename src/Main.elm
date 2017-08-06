@@ -1,20 +1,21 @@
 module Main exposing (..)
 
+import Decoders as Decode
+import Dict exposing (Dict)
+import Geolocation as Geo
 import Html exposing (..)
-import Html.Events as Events
 import Html.Attributes exposing (..)
+import Html.Events as Events
+import Http as Http
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Http as Http
-import Geolocation as Geo
-import Task
+import Leaflet as L
+import Models exposing (FullVenueData, ShortVenueData)
 import Public
 import Secrets
 import Styles
-import Dict exposing (Dict)
-import Leaflet as L
-import Models exposing (ShortVenueData, FullVenueData)
-import Decoders as Decode
+import Task
+import VenuePresenter as Present
 
 
 main =
@@ -52,19 +53,19 @@ decodeOnMapCreation val =
         result =
             Json.decodeValue Json.bool val
     in
-        case result of
-            Ok _ ->
-                StartFetchingVenues
+    case result of
+        Ok _ ->
+            StartFetchingVenues
 
-            Err _ ->
-                UpdateMessage "Something went wrong creating your map!"
+        Err _ ->
+            UpdateMessage "Something went wrong creating your map!"
 
 
 decodeMarkerEvent : Value -> Msg
 decodeMarkerEvent val =
     let
         didGoThrough =
-            (Json.decodeValue
+            Json.decodeValue
                 (Json.map3
                     (\e lat lng -> { event = e, lat = lat, lng = lng })
                     (Json.field "event" Json.string)
@@ -72,14 +73,13 @@ decodeMarkerEvent val =
                     (Json.field "lng" Json.float)
                 )
                 val
-            )
     in
-        case didGoThrough of
-            Ok eventData ->
-                OnMarkerClick eventData
+    case didGoThrough of
+        Ok eventData ->
+            OnMarkerClick eventData
 
-            Err _ ->
-                UpdateMessage "It failed!"
+        Err _ ->
+            UpdateMessage "It failed!"
 
 
 
@@ -103,7 +103,11 @@ init =
 
 contentColumn : Model -> Html msg
 contentColumn model =
-    case Maybe.map .name model.currentVenue of
+    let
+        defaultBanner =
+            "http://booklikes.com/upload/post/7/f/azure_7fc5c06998f8c606d230e94ab765c7cb.jpeg"
+    in
+    case model.currentVenue of
         Nothing ->
             div
                 [ Styles.contentColumn
@@ -112,23 +116,34 @@ contentColumn model =
                 [ div
                     [ Styles.filler ]
                     []
-                , h1
-                    []
-                    [ text "Placeholder!" ]
+                , div
+                    [ Styles.venueBannerWrapper ]
+                    [ img
+                        [ Styles.venueBanner
+                        , src defaultBanner
+                        ]
+                        []
+                    ]
                 , h4
                     []
                     [ text model.waitingMsg ]
                 ]
 
-        Just name ->
+        Just venue ->
             div
                 [ Styles.contentColumn ]
                 [ h1
                     []
-                    [ text name ]
+                    [ text venue.name ]
+                , Present.location venue
                 , h5
                     []
                     [ text model.waitingMsg ]
+                , Present.banner venue defaultBanner
+                , hr [] []
+                , Present.hours venue
+                , Present.rating venue
+                , Present.attributes venue
                 ]
 
 
@@ -178,9 +193,9 @@ fetchVenues model =
     let
         params =
             "?ll="
-                ++ (toString model.location.lat)
+                ++ toString model.location.lat
                 ++ ","
-                ++ (toString model.location.lng)
+                ++ toString model.location.lng
                 ++ "&client_id="
                 ++ Secrets.foursquareClientId
                 ++ "&client_secret="
@@ -193,7 +208,7 @@ fetchVenues model =
         request =
             Http.get url Decode.foursquareVenuesDecoder
     in
-        Http.send FetchVenues request
+    Http.send FetchVenues request
 
 
 fetchVenueData : String -> Cmd Msg
@@ -212,17 +227,22 @@ fetchVenueData venueId =
         request =
             Http.get url (Json.at [ "response", "venue" ] Decode.fullVenueDecoder)
     in
-        Http.send FetchVenueData request
+    Http.send FetchVenueData request
 
 
 populateMap : Model -> Cmd Msg
 populateMap model =
     let
+        icon =
+            { url = "https://image.flaticon.com/icons/png/512/184/184549.png"
+            , size = { height = 35, width = 35 }
+            }
+
         venueMarkerData =
-            (\x ->
+            \x ->
                 { lat = x.location.lat
                 , lng = x.location.lng
-                , icon = Nothing
+                , icon = Just icon
                 , draggable = False
                 , popup = Just x.name
                 , events =
@@ -236,12 +256,11 @@ populateMap model =
                       }
                     ]
                 }
-            )
 
         venueMarkers =
             List.map venueMarkerData model.shortVenues
     in
-        L.addMarkers venueMarkers
+    L.addMarkers venueMarkers
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -257,7 +276,7 @@ update msg model =
                         | shortVenues = List.concat venues
                     }
             in
-                updatedModel ! [ populateMap updatedModel ]
+            updatedModel ! [ populateMap updatedModel ]
 
         FetchVenues (Err _) ->
             { model
@@ -295,7 +314,7 @@ update msg model =
                             }
                     }
             in
-                updatedModel ! [ L.initMap mapData ]
+            updatedModel ! [ L.initMap mapData ]
 
         UpdateMessage str ->
             { model | waitingMsg = str } ! []
@@ -303,26 +322,25 @@ update msg model =
         OnMarkerClick eventData ->
             let
                 hasMatchingCoords =
-                    (\marker ->
+                    \marker ->
                         (marker.location.lat == eventData.lat)
                             && (marker.location.lng == eventData.lng)
-                    )
 
                 targetMarker =
                     model.shortVenues
                         |> List.filter hasMatchingCoords
             in
-                case targetMarker of
-                    [] ->
-                        { model | waitingMsg = "Couldn't find target marker" } ! []
+            case targetMarker of
+                [] ->
+                    { model | waitingMsg = "Couldn't find target marker" } ! []
 
-                    v :: _ ->
-                        case Dict.get v.id model.fullVenues of
-                            Nothing ->
-                                model ! [ fetchVenueData v.id ]
+                v :: _ ->
+                    case Dict.get v.id model.fullVenues of
+                        Nothing ->
+                            model ! [ fetchVenueData v.id ]
 
-                            venue ->
-                                { model | currentVenue = venue } ! []
+                        venue ->
+                            { model | currentVenue = venue } ! []
 
         FetchVenueData (Ok venueData) ->
             { model

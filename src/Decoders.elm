@@ -28,6 +28,14 @@ venueDecoder =
         )
 
 
+type alias VenuePhoto =
+    { prefix : String
+    , suffix : String
+    , width : Int
+    , height : Int
+    }
+
+
 fullVenueDecoder : Json.Decoder FullVenueData
 fullVenueDecoder =
     Json.map7
@@ -62,8 +70,10 @@ fullVenueDecoder =
         )
         (Json.maybe <|
             Json.field "bestPhoto" <|
-                Json.map2
-                    (\pre suff -> { prefix = pre, suffix = suff })
+                Json.map4
+                    VenuePhoto
                     (Json.field "prefix" Json.string)
                     (Json.field "suffix" Json.string)
+                    (Json.field "width" Json.int)
+                    (Json.field "height" Json.int)
         )
