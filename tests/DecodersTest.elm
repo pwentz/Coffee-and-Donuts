@@ -1,10 +1,10 @@
-module MainTest exposing (..)
+module DecodersTest exposing (..)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, list, int, string)
 import Json.Decode as Json
 import Test exposing (..)
-import Main exposing (..)
+import Decoders exposing (..)
 import Http
 
 
@@ -62,8 +62,8 @@ suite =
                             },
                             "url" : "http://www.chicagoparkdistrict.com/parks/maggie-daley-park/",
                             "rating" : 9.2,
-                            "hours" : { "status" : "Likely Open" },
                             "popular" : {
+                              "isOpen" : false,
                               "timeframes" : [
                                 { "days" : "today",
                                   "open" : [
@@ -100,27 +100,74 @@ suite =
                                 venue
 
                         expected =
-                            { name = "Brooklyn Bridge Promenade"
+                            { id = "4e713390fa766da6339dc53f"
+                            , name = "Brooklyn Bridge Promenade"
                             , location =
                                 [ "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)"
                                 , "Chicago, IL 60601"
                                 ]
-                            , rating = 9.2
-                            , hours = "Likely Open"
+                            , rating = Just 9.2
                             , popular =
-                                [ { day = "today"
-                                  , hours = "9:00 AM-8:00 PM"
-                                  }
-                                , { day = "Tues"
-                                  , hours = "6:00 AM-3:00 PM"
-                                  }
-                                ]
+                                (Just
+                                    [ { day = "today"
+                                      , hours = "9:00 AM-8:00 PM"
+                                      }
+                                    , { day = "Tues"
+                                      , hours = "6:00 AM-3:00 PM"
+                                      }
+                                    ]
+                                )
                             , attributes =
-                                [ "Outdoor Seating" ]
+                                Just [ "Outdoor Seating" ]
                             , bestPhoto =
-                                { prefix = "https://something/img/"
-                                , suffix = "/1234/stuff.jpg"
-                                }
+                                Just
+                                    { prefix = "https://something/img/"
+                                    , suffix = "/1234/stuff.jpg"
+                                    }
+                            }
+                    in
+                        case decodedValue of
+                            Ok val ->
+                                Expect.equal val expected
+
+                            Err msg ->
+                                Expect.fail msg
+            , test "it can account for missing data" <|
+                \_ ->
+                    let
+                        venue =
+                            """
+                          { "venue" : {
+                              "id" : "4e713390fa766da6339dc53f",
+                              "name" : "Brooklyn Bridge Promenade",
+                              "location" : {
+                                "formattedAddress" : [
+                                  "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)",
+                                  "Chicago, IL 60601"
+                                ],
+                                "lat" : 40.69846219320118,
+                                "lng" : -73.99670720100403
+                              },
+                              "url" : "http://www.chicagoparkdistrict.com/parks/maggie-daley-park/"
+                          } }
+                          """
+
+                        decodedValue =
+                            Json.decodeString
+                                (Json.at [ "venue" ] fullVenueDecoder)
+                                venue
+
+                        expected =
+                            { id = "4e713390fa766da6339dc53f"
+                            , name = "Brooklyn Bridge Promenade"
+                            , location =
+                                [ "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)"
+                                , "Chicago, IL 60601"
+                                ]
+                            , rating = Nothing
+                            , popular = Nothing
+                            , attributes = Nothing
+                            , bestPhoto = Nothing
                             }
                     in
                         case decodedValue of
