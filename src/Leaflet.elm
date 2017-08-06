@@ -10,7 +10,8 @@ type alias Icon =
 
 
 type alias Marker =
-    { lat : Float
+    { id : Int
+    , lat : Float
     , lng : Float
     , icon : Maybe Icon
     , draggable : Bool

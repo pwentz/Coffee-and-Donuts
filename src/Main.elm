@@ -12,9 +12,11 @@ import Json.Encode exposing (Value)
 import Leaflet as L
 import Models exposing (FullVenueData, ShortVenueData)
 import Public
+import Random
 import Secrets
 import Styles
 import Task
+import Tuple
 import VenuePresenter as Present
 
 
@@ -227,32 +229,42 @@ fetchVenueData venueId =
 populateMap : Model -> Cmd Msg
 populateMap model =
     let
+        random =
+            Random.initialSeed 0
+                |> Random.step (Random.int 0 Random.maxInt)
+
         icon =
             { url = Public.venueIcon
             , size = { height = 35, width = 35 }
             }
 
         venueMarkerData =
-            \x ->
-                { lat = x.location.lat
-                , lng = x.location.lng
-                , icon = Just icon
-                , draggable = False
-                , popup = Just x.name
-                , events =
-                    [ { event = "mouseover"
-                      , action = Just "openPopup"
-                      , subscribe = False
-                      }
-                    , { event = "click"
-                      , action = Nothing
-                      , subscribe = True
-                      }
-                    ]
-                }
+            \x ( ( id, seed ), markers ) ->
+                ( Random.step (Random.int 0 Random.maxInt) seed
+                , { id = id
+                  , lat = x.location.lat
+                  , lng = x.location.lng
+                  , icon = Just icon
+                  , draggable = False
+                  , popup = Just x.name
+                  , events =
+                        [ { event = "mouseover"
+                          , action = ( Just "openPopup", Nothing )
+                          , subscribe = False
+                          }
+                        , { event = "click"
+                          , action = ( Nothing, Nothing )
+                          , subscribe = True
+                          }
+                        ]
+                  }
+                    :: markers
+                )
 
         venueMarkers =
-            List.map venueMarkerData model.shortVenues
+            model.shortVenues
+                |> List.foldr venueMarkerData ( random, [] )
+                |> Tuple.second
     in
     L.addMarkers venueMarkers
 
