@@ -34,8 +34,7 @@ type alias MapData =
     , zoom : Int
     , tileLayer : String
     , tileLayerOptions :
-        { attribution : String
-        , maxZoom : Int
+        { maxZoom : Int
         , id : String
         , accessToken : String
         }

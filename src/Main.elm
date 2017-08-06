@@ -78,7 +78,7 @@ decodeMarkerEvent val =
     in
     case didGoThrough of
         Ok eventData ->
-            OnMarkerClick eventData
+            OnMarkerEvent eventData
 
         Err _ ->
             UpdateMessage "It failed!"
@@ -136,7 +136,6 @@ contentColumn model =
                     []
                     [ text model.waitingMsg ]
                 , Present.banner venue
-                , hr [] []
                 , Present.hours venue
                 , Present.rating venue
                 , Present.attributes venue
@@ -175,7 +174,7 @@ type Msg
     | GetLocation (Result Geo.Error Geo.Location)
     | StartFetchingVenues
     | UpdateMessage String
-    | OnMarkerClick { event : String, lat : Float, lng : Float }
+    | OnMarkerEvent { event : String, lat : Float, lng : Float }
     | FetchVenueData (Result Http.Error FullVenueData)
 
 
@@ -249,11 +248,11 @@ populateMap model =
                   , popup = Just x.name
                   , events =
                         [ { event = "mouseover"
-                          , action = ( Just "openPopup", Nothing )
+                          , action = Just "openPopup"
                           , subscribe = False
                           }
                         , { event = "click"
-                          , action = ( Nothing, Nothing )
+                          , action = Nothing
                           , subscribe = True
                           }
                         ]
@@ -305,8 +304,7 @@ update msg model =
                     , zoom = 16
                     , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
                     , tileLayerOptions =
-                        { attribution = ""
-                        , maxZoom = 22
+                        { maxZoom = 22
                         , id = "mapbox.streets"
                         , accessToken = Public.mapboxToken
                         }
@@ -325,7 +323,7 @@ update msg model =
         UpdateMessage str ->
             { model | waitingMsg = str } ! []
 
-        OnMarkerClick eventData ->
+        OnMarkerEvent eventData ->
             let
                 hasMatchingCoords =
                     \marker ->
