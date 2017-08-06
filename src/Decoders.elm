@@ -1,7 +1,7 @@
 module Decoders exposing (..)
 
-import Models exposing (ShortVenueData, FullVenueData)
 import Json.Decode as Json
+import Models exposing (FullVenueData, ShortVenueData)
 
 
 foursquareVenuesDecoder : Json.Decoder (List (List ShortVenueData))
@@ -28,14 +28,26 @@ venueDecoder =
         )
 
 
+type alias VenuePhoto =
+    { prefix : String
+    , suffix : String
+    , width : Int
+    , height : Int
+    }
+
+
 fullVenueDecoder : Json.Decoder FullVenueData
 fullVenueDecoder =
-    Json.map7
+    Json.map8
         FullVenueData
         (Json.field "id" Json.string)
         (Json.field "name" Json.string)
         (Json.field "location" <|
             Json.field "formattedAddress" (Json.list Json.string)
+        )
+        (Json.field "contact" <|
+            Json.maybe <|
+                Json.field "phone" Json.string
         )
         (Json.maybe <|
             Json.field "rating" Json.float
@@ -62,8 +74,10 @@ fullVenueDecoder =
         )
         (Json.maybe <|
             Json.field "bestPhoto" <|
-                Json.map2
-                    (\pre suff -> { prefix = pre, suffix = suff })
+                Json.map4
+                    VenuePhoto
                     (Json.field "prefix" Json.string)
                     (Json.field "suffix" Json.string)
+                    (Json.field "width" Json.int)
+                    (Json.field "height" Json.int)
         )
