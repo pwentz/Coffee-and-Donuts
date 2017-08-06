@@ -68,6 +68,14 @@ venueBanner =
         ]
 
 
+venueLocationData : Attribute msg
+venueLocationData =
+    styles
+        [ textAlign center
+        , listStyleType none
+        ]
+
+
 filler : Attribute msg
 filler =
     styles

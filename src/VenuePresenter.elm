@@ -30,13 +30,26 @@ banner venue defaultBanner =
 location : FullVenueData -> Html msg
 location venue =
     let
-        locations =
-            venue.location
-                |> List.map (\x -> p [] [ text x ])
+        phoneNumber =
+            venue.phone
+                |> Maybe.map
+                    (\x ->
+                        if String.length x == 10 then
+                            "(" ++ String.left 3 x ++ ")" ++ " " ++ (String.dropRight 4 << String.dropLeft 3) x ++ "-" ++ String.right 4 x
+                        else
+                            x
+                    )
+                |> Maybe.withDefault ""
+
+        locationData =
+            phoneNumber
+                :: venue.location
+                |> List.map (\x -> li [] [ text x ])
+                |> (\xs -> ul [ Styles.venueLocationData ] xs)
     in
     div
         []
-        locations
+        [ locationData ]
 
 
 hours : FullVenueData -> Html msg

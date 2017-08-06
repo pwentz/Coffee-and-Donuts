@@ -1,7 +1,7 @@
 module Decoders exposing (..)
 
-import Models exposing (ShortVenueData, FullVenueData)
 import Json.Decode as Json
+import Models exposing (FullVenueData, ShortVenueData)
 
 
 foursquareVenuesDecoder : Json.Decoder (List (List ShortVenueData))
@@ -38,12 +38,16 @@ type alias VenuePhoto =
 
 fullVenueDecoder : Json.Decoder FullVenueData
 fullVenueDecoder =
-    Json.map7
+    Json.map8
         FullVenueData
         (Json.field "id" Json.string)
         (Json.field "name" Json.string)
         (Json.field "location" <|
             Json.field "formattedAddress" (Json.list Json.string)
+        )
+        (Json.field "contact" <|
+            Json.maybe <|
+                Json.field "phone" Json.string
         )
         (Json.maybe <|
             Json.field "rating" Json.float

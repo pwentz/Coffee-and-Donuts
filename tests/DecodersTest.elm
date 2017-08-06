@@ -1,11 +1,11 @@
 module DecodersTest exposing (..)
 
+import Decoders exposing (..)
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, list, int, string)
+import Fuzz exposing (Fuzzer, int, list, string)
+import Http
 import Json.Decode as Json
 import Test exposing (..)
-import Decoders exposing (..)
-import Http
 
 
 suite : Test
@@ -32,16 +32,16 @@ suite =
                                 (Json.at [ "venue" ] venueDecoder)
                                 venue
                     in
-                        Expect.equal decodedOutput
-                            (Ok
-                                { id = "4e713390fa766da6339dc53f"
-                                , name = "Brooklyn Bridge Promenade"
-                                , location =
-                                    { lat = 40.69846219320118
-                                    , lng = -73.99670720100403
-                                    }
+                    Expect.equal decodedOutput
+                        (Ok
+                            { id = "4e713390fa766da6339dc53f"
+                            , name = "Brooklyn Bridge Promenade"
+                            , location =
+                                { lat = 40.69846219320118
+                                , lng = -73.99670720100403
                                 }
-                            )
+                            }
+                        )
             ]
         , describe "FullVenueDecoder"
             [ test "it decodes large venue data" <|
@@ -52,6 +52,10 @@ suite =
                         { "venue" : {
                             "id" : "4e713390fa766da6339dc53f",
                             "name" : "Brooklyn Bridge Promenade",
+                            "contact" : {
+                              "phone" : "1234567890",
+                              "formattedPhone" : "(123) 456-7890"
+                            },
                             "location" : {
                               "formattedAddress" : [
                                 "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)",
@@ -106,9 +110,10 @@ suite =
                                 [ "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)"
                                 , "Chicago, IL 60601"
                                 ]
+                            , phone = Just "1234567890"
                             , rating = Just 9.2
                             , popular =
-                                (Just
+                                Just
                                     [ { day = "today"
                                       , hours = "9:00 AM-8:00 PM"
                                       }
@@ -116,7 +121,6 @@ suite =
                                       , hours = "6:00 AM-3:00 PM"
                                       }
                                     ]
-                                )
                             , attributes =
                                 Just [ "Outdoor Seating" ]
                             , bestPhoto =
@@ -128,12 +132,12 @@ suite =
                                     }
                             }
                     in
-                        case decodedValue of
-                            Ok val ->
-                                Expect.equal val expected
+                    case decodedValue of
+                        Ok val ->
+                            Expect.equal val expected
 
-                            Err msg ->
-                                Expect.fail msg
+                        Err msg ->
+                            Expect.fail msg
             , test "it can account for missing data" <|
                 \_ ->
                     let
@@ -142,6 +146,7 @@ suite =
                           { "venue" : {
                               "id" : "4e713390fa766da6339dc53f",
                               "name" : "Brooklyn Bridge Promenade",
+                              "contact" : {},
                               "location" : {
                                 "formattedAddress" : [
                                   "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)",
@@ -166,17 +171,18 @@ suite =
                                 [ "337 E Randolph Dr (btwn Lake Shore Dr & Columbus Dr)"
                                 , "Chicago, IL 60601"
                                 ]
+                            , phone = Nothing
                             , rating = Nothing
                             , popular = Nothing
                             , attributes = Nothing
                             , bestPhoto = Nothing
                             }
                     in
-                        case decodedValue of
-                            Ok val ->
-                                Expect.equal val expected
+                    case decodedValue of
+                        Ok val ->
+                            Expect.equal val expected
 
-                            Err msg ->
-                                Expect.fail msg
+                        Err msg ->
+                            Expect.fail msg
             ]
         ]
