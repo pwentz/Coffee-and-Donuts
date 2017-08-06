@@ -3,11 +3,19 @@ module VenuePresenter exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Models exposing (FullVenueData)
+import Public
 import Styles
 
 
-banner : FullVenueData -> String -> Html msg
-banner venue defaultBanner =
+name : FullVenueData -> Html msg
+name venue =
+    h1
+        [ Styles.venueHeader ]
+        [ text venue.name ]
+
+
+banner : FullVenueData -> Html msg
+banner venue =
     let
         getBanner =
             \x -> x.prefix ++ "150x150" ++ x.suffix
@@ -15,7 +23,7 @@ banner venue defaultBanner =
         bannerImg =
             venue.bestPhoto
                 |> Maybe.map getBanner
-                |> Maybe.withDefault defaultBanner
+                |> Maybe.withDefault Public.defaultBanner
     in
     div
         [ Styles.venueBannerWrapper ]
@@ -63,13 +71,13 @@ hours venue =
                             li [] [ text <| x.day ++ ": " ++ x.hours ]
                         )
                     )
-                |> Maybe.map (\xs -> ul [] xs)
+                |> Maybe.map (\xs -> ul [ Styles.venueHours ] xs)
                 |> Maybe.withDefault (p [] [ text "No hours listed" ])
     in
     div
         []
         [ h4
-            []
+            [ Styles.venueHoursHeader ]
             [ text "Hours" ]
         , popular
         ]
@@ -80,15 +88,21 @@ rating venue =
     let
         rating =
             venue.rating
-                |> Maybe.map (\x -> "Rating: " ++ toString x)
-                |> Maybe.withDefault ""
+                |> Maybe.map
+                    (\x ->
+                        [ h4
+                            [ Styles.venueRatingHeader ]
+                            [ text "Rating" ]
+                        , p
+                            [ Styles.venueRating x ]
+                            [ (text << toString) x ]
+                        ]
+                    )
+                |> Maybe.withDefault []
     in
     div
         []
-        [ h4
-            []
-            [ text rating ]
-        ]
+        rating
 
 
 attributes : FullVenueData -> Html msg
@@ -102,13 +116,21 @@ attributes venue =
                             li [] [ text x ]
                         )
                     )
-                |> Maybe.map (\xs -> ul [] xs)
-                |> Maybe.withDefault (p [] [ text "No attributes provided" ])
+                |> Maybe.map
+                    (\xs ->
+                        if List.isEmpty xs then
+                            []
+                        else
+                            [ h4
+                                [ Styles.venueAttributesHeader ]
+                                [ text "Attributes" ]
+                            , ul
+                                [ Styles.venueAttributes ]
+                                xs
+                            ]
+                    )
+                |> Maybe.withDefault []
     in
     div
         []
-        [ h4
-            []
-            [ text "Attributes" ]
-        , attrs
-        ]
+        attrs

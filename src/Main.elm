@@ -40,7 +40,7 @@ type alias Model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.batch
         [ L.onMapCreation decodeOnMapCreation
         , L.onMarkerEvent decodeMarkerEvent
@@ -103,10 +103,6 @@ init =
 
 contentColumn : Model -> Html msg
 contentColumn model =
-    let
-        defaultBanner =
-            "http://booklikes.com/upload/post/7/f/azure_7fc5c06998f8c606d230e94ab765c7cb.jpeg"
-    in
     case model.currentVenue of
         Nothing ->
             div
@@ -120,7 +116,7 @@ contentColumn model =
                     [ Styles.venueBannerWrapper ]
                     [ img
                         [ Styles.venueBanner
-                        , src defaultBanner
+                        , src Public.defaultBanner
                         ]
                         []
                     ]
@@ -132,14 +128,12 @@ contentColumn model =
         Just venue ->
             div
                 [ Styles.contentColumn ]
-                [ h1
-                    []
-                    [ text venue.name ]
+                [ Present.name venue
                 , Present.location venue
                 , h5
                     []
                     [ text model.waitingMsg ]
-                , Present.banner venue defaultBanner
+                , Present.banner venue
                 , hr [] []
                 , Present.hours venue
                 , Present.rating venue
@@ -151,7 +145,7 @@ view : Model -> Html msg
 view model =
     div
         []
-        [ h3
+        [ h2
             [ Styles.mainHeader ]
             [ text "Coffee & Donuts" ]
         , div
@@ -234,7 +228,7 @@ populateMap : Model -> Cmd Msg
 populateMap model =
     let
         icon =
-            { url = "https://image.flaticon.com/icons/png/512/184/184549.png"
+            { url = Public.venueIcon
             , size = { height = 35, width = 35 }
             }
 
