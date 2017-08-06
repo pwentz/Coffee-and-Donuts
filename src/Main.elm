@@ -10,7 +10,11 @@ import Geolocation as Geo
 import Task
 import Public
 import Secrets
+import Styles
+import Dict exposing (Dict)
 import Leaflet as L
+import Models exposing (ShortVenueData, FullVenueData)
+import Decoders as Decode
 
 
 main =
@@ -20,6 +24,18 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+
+type alias Model =
+    { shortVenues : List ShortVenueData
+    , fullVenues : Dict String FullVenueData
+    , location :
+        { lat : Float
+        , lng : Float
+        }
+    , waitingMsg : String
+    , currentVenue : Maybe FullVenueData
+    }
 
 
 subscriptions : Model -> Sub Msg
@@ -70,126 +86,72 @@ decodeMarkerEvent val =
 -- MODEL
 
 
-type alias ShortVenueData =
-    { id : String
-    , name : String
-    , location :
-        { lat : Float
-        , lng : Float
-        }
-    }
-
-
-type alias Model =
-    { venues : List ShortVenueData
-    , location :
-        { lat : Float
-        , lng : Float
-        }
-    , waitingMsg : String
-    , currentVenue : Maybe FullVenueData
-    }
-
-
-type alias FullVenueData =
-    { name : String
-    , location : List String
-    , rating : Float
-    , hours : String
-    , popular : List { day : String, hours : String }
-    , attributes : List String
-    , bestPhoto : { prefix : String, suffix : String }
-    }
-
-
 init : ( Model, Cmd Msg )
 init =
-    ( { venues = []
-      , waitingMsg = ""
-      , location = { lat = 0.0, lng = 0.0 }
-      , currentVenue = Nothing
-      }
-    , getLocation
-    )
-
-
-foursquareVenuesDecoder =
-    Json.at [ "response", "groups" ]
-        (Json.list
-            (Json.at [ "items" ]
-                (Json.list (Json.field "venue" venueDecoder))
-            )
-        )
-
-
-venueDecoder =
-    Json.map3
-        ShortVenueData
-        (Json.field "id" Json.string)
-        (Json.field "name" Json.string)
-        (Json.field "location"
-            (Json.map2
-                (\lat lng -> { lat = lat, lng = lng })
-                (Json.field "lat" Json.float)
-                (Json.field "lng" Json.float)
-            )
-        )
-
-
-fullVenueDecoder =
-    Json.map7
-        FullVenueData
-        (Json.field "name" Json.string)
-        (Json.field "location"
-            (Json.field "formattedAddress" (Json.list Json.string))
-        )
-        (Json.field "rating" Json.float)
-        (Json.at [ "hours", "status" ] Json.string)
-        (Json.at [ "popular", "timeframes" ]
-            (Json.list
-                (Json.map2
-                    (\day times ->
-                        { day = day
-                        , hours = (Maybe.withDefault "Not Listed" << List.head) times
-                        }
-                    )
-                    (Json.field "days" Json.string)
-                    (Json.field "open"
-                        (Json.list (Json.field "renderedTime" Json.string))
-                    )
-                )
-            )
-        )
-        (Json.at [ "attributes", "groups" ]
-            (Json.list (Json.field "name" Json.string))
-        )
-        (Json.field "bestPhoto"
-            (Json.map2 (\pre suff -> { prefix = pre, suffix = suff })
-                (Json.field "prefix" Json.string)
-                (Json.field "suffix" Json.string)
-            )
-        )
+    { shortVenues = []
+    , fullVenues = Dict.empty
+    , waitingMsg = ""
+    , location = { lat = 0.0, lng = 0.0 }
+    , currentVenue = Nothing
+    }
+        ! [ getLocation ]
 
 
 
 -- VIEW
 
 
+contentColumn : Model -> Html msg
+contentColumn model =
+    case Maybe.map .name model.currentVenue of
+        Nothing ->
+            div
+                [ Styles.contentColumn
+                , Styles.defaultContent
+                ]
+                [ div
+                    [ Styles.filler ]
+                    []
+                , h1
+                    []
+                    [ text "Placeholder!" ]
+                , h4
+                    []
+                    [ text model.waitingMsg ]
+                ]
+
+        Just name ->
+            div
+                [ Styles.contentColumn ]
+                [ h1
+                    []
+                    [ text name ]
+                , h5
+                    []
+                    [ text model.waitingMsg ]
+                ]
+
+
 view : Model -> Html msg
 view model =
     div
         []
-        [ h2
-            []
+        [ h3
+            [ Styles.mainHeader ]
             [ text "Coffee & Donuts" ]
-        , h5
-            []
-            [ text model.waitingMsg ]
         , div
-            [ id "map"
-            , style [ ( "height", "500px" ) ]
-            ]
             []
+            [ contentColumn model
+            , div
+                [ Styles.mapWrapper ]
+                [ div
+                    [ id "map"
+                    , Styles.map
+                    ]
+                    []
+                ]
+            , br [ style [ ( "clear", "both" ) ] ] []
+            ]
         ]
 
 
@@ -229,7 +191,7 @@ fetchVenues model =
             "https://api.foursquare.com/v2/venues/explore" ++ params
 
         request =
-            Http.get url foursquareVenuesDecoder
+            Http.get url Decode.foursquareVenuesDecoder
     in
         Http.send FetchVenues request
 
@@ -248,7 +210,7 @@ fetchVenueData venueId =
             "https://api.foursquare.com/v2/venues/" ++ venueId ++ params
 
         request =
-            Http.get url (Json.at [ "response", "venue" ] fullVenueDecoder)
+            Http.get url (Json.at [ "response", "venue" ] Decode.fullVenueDecoder)
     in
         Http.send FetchVenueData request
 
@@ -277,7 +239,7 @@ populateMap model =
             )
 
         venueMarkers =
-            List.map venueMarkerData model.venues
+            List.map venueMarkerData model.shortVenues
     in
         L.addMarkers venueMarkers
 
@@ -286,32 +248,28 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         StartFetchingVenues ->
-            ( model, fetchVenues model )
+            model ! [ fetchVenues model ]
 
         FetchVenues (Ok venues) ->
             let
                 updatedModel =
                     { model
-                        | venues = List.concat venues
+                        | shortVenues = List.concat venues
                     }
             in
-                ( updatedModel
-                , populateMap updatedModel
-                )
+                updatedModel ! [ populateMap updatedModel ]
 
         FetchVenues (Err _) ->
-            ( { model
+            { model
                 | waitingMsg = "Something went wrong while we were getting venues!"
-              }
-            , Cmd.none
-            )
+            }
+                ! []
 
         GetLocation (Err _) ->
-            ( { model
+            { model
                 | waitingMsg = "We need your location for the app to function properly!"
-              }
-            , Cmd.none
-            )
+            }
+                ! []
 
         GetLocation (Ok location) ->
             let
@@ -337,10 +295,10 @@ update msg model =
                             }
                     }
             in
-                ( updatedModel, (L.initMap mapData) )
+                updatedModel ! [ L.initMap mapData ]
 
         UpdateMessage str ->
-            ( { model | waitingMsg = str }, Cmd.none )
+            { model | waitingMsg = str } ! []
 
         OnMarkerClick eventData ->
             let
@@ -351,18 +309,27 @@ update msg model =
                     )
 
                 targetMarker =
-                    model.venues
+                    model.shortVenues
                         |> List.filter hasMatchingCoords
             in
                 case targetMarker of
                     [] ->
-                        ( { model | waitingMsg = "Couldn't find target marker" }, Cmd.none )
+                        { model | waitingMsg = "Couldn't find target marker" } ! []
 
-                    x :: _ ->
-                        ( model, (fetchVenueData x.id) )
+                    v :: _ ->
+                        case Dict.get v.id model.fullVenues of
+                            Nothing ->
+                                model ! [ fetchVenueData v.id ]
+
+                            venue ->
+                                { model | currentVenue = venue } ! []
 
         FetchVenueData (Ok venueData) ->
-            ( { model | currentVenue = Just venueData }, Cmd.none )
+            { model
+                | currentVenue = Just venueData
+                , fullVenues = Dict.insert venueData.id venueData model.fullVenues
+            }
+                ! []
 
         FetchVenueData (Err _) ->
-            ( { model | waitingMsg = "Something went wrong getting venue" }, Cmd.none )
+            { model | waitingMsg = "Something went wrong getting venue" } ! []
