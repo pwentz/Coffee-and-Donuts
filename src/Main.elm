@@ -103,21 +103,16 @@ init =
 -- VIEW
 
 
-contentColumn : Model -> Html msg
-contentColumn model =
+contentRow : Model -> Html msg
+contentRow model =
     case model.currentVenue of
         Nothing ->
             div
-                [ Styles.contentColumn
-                , Styles.defaultContent
-                ]
+                [ Styles.defaultContent ]
                 [ div
-                    [ Styles.filler ]
-                    []
-                , div
-                    [ Styles.venueBannerWrapper ]
+                    [ style [ ( "margin", "auto" ) ] ]
                     [ img
-                        [ Styles.venueBanner
+                        [ Styles.defaultBanner
                         , src Public.defaultBanner
                         ]
                         []
@@ -129,13 +124,13 @@ contentColumn model =
 
         Just venue ->
             div
-                [ Styles.contentColumn ]
-                [ Present.name venue
-                , Present.location venue
-                , h5
-                    []
-                    [ text model.waitingMsg ]
-                , Present.banner venue
+                [ Styles.contentRow ]
+                [ Present.banner venue
+                , div
+                    [ Styles.contentColumn ]
+                    [ Present.name venue
+                    , Present.location venue
+                    ]
                 , Present.hours venue
                 , Present.rating venue
                 , Present.attributes venue
@@ -151,8 +146,7 @@ view model =
             [ text "Coffee & Donuts" ]
         , div
             []
-            [ contentColumn model
-            , div
+            [ div
                 [ Styles.mapWrapper ]
                 [ div
                     [ id "map"
@@ -160,7 +154,10 @@ view model =
                     ]
                     []
                 ]
-            , br [ style [ ( "clear", "both" ) ] ] []
+            , div
+                [ Styles.divider ]
+                []
+            , contentRow model
             ]
         ]
 

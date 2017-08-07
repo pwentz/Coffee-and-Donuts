@@ -26,12 +26,21 @@ banner venue =
                 |> Maybe.withDefault Public.defaultBanner
     in
     div
-        [ Styles.venueBannerWrapper ]
-        [ img
-            [ Styles.venueBanner
-            , src bannerImg
+        [ style
+            [ ( "position", "relative" )
+            , ( "height", "100%" )
+            , ( "width", "100%" )
             ]
-            []
+        , Styles.contentColumn
+        ]
+        [ div
+            [ Styles.venueBannerWrapper ]
+            [ img
+                [ Styles.venueBanner
+                , src bannerImg
+                ]
+                []
+            ]
         ]
 
 
@@ -55,9 +64,7 @@ location venue =
                 |> List.map (\x -> li [] [ text x ])
                 |> (\xs -> ul [ Styles.venueLocationData ] xs)
     in
-    div
-        []
-        [ locationData ]
+    locationData
 
 
 hours : FullVenueData -> Html msg
@@ -75,7 +82,7 @@ hours venue =
                 |> Maybe.withDefault (p [] [ text "No hours listed" ])
     in
     div
-        []
+        [ Styles.contentColumn ]
         [ h4
             [ Styles.venueHoursHeader ]
             [ text "Hours" ]
@@ -101,7 +108,7 @@ rating venue =
                 |> Maybe.withDefault []
     in
     div
-        []
+        [ Styles.contentColumn ]
         rating
 
 
@@ -132,5 +139,5 @@ attributes venue =
                 |> Maybe.withDefault []
     in
     div
-        []
+        [ Styles.contentColumn ]
         attrs

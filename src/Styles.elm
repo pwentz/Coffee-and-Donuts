@@ -35,11 +35,12 @@ styles cssPairs =
         |> Html.Attributes.style
 
 
-contentColumn : Attribute msg
-contentColumn =
+contentRow : Attribute msg
+contentRow =
     styles
-        [ float left
-        , width (pct 30)
+        [ height (vh 25)
+        , width (pct 95)
+        , margin auto
         , textAlign center
         ]
 
@@ -59,9 +60,9 @@ mapWrapper : Attribute msg
 mapWrapper =
     styles
         [ position relative
-        , height (vh 90)
-        , width (pct 70)
-        , float right
+        , height (vh 65)
+        , width (pct 95)
+        , margin auto
         ]
 
 
@@ -83,21 +84,44 @@ venueHeader =
 defaultContent : Attribute msg
 defaultContent =
     styles
-        [ textAlign center
+        [ height (vh 25)
+        , textAlign center
         ]
 
 
 venueBannerWrapper : Attribute msg
 venueBannerWrapper =
     styles
-        [ margin auto ]
+        [ position absolute
+        , top (em 0)
+        , bottom (em 0)
+        , left (em 0)
+        , right (em 0)
+        , overflow hidden
+        ]
+
+
+contentColumn : Attribute msg
+contentColumn =
+    styles
+        [ float left
+        , width (pct 20)
+        ]
 
 
 venueBanner : Attribute msg
 venueBanner =
     styles
-        [ height (vh 20)
-        , width (pct 95)
+        [ height auto
+        , width (pct 100)
+        ]
+
+
+defaultBanner : Attribute msg
+defaultBanner =
+    styles
+        [ height auto
+        , width (pct 25)
         ]
 
 
@@ -163,8 +187,8 @@ venueRatingHeader =
         ]
 
 
-filler : Attribute msg
-filler =
+divider : Attribute msg
+divider =
     styles
-        [ height (vh 40)
+        [ height (vh 0.5)
         ]
