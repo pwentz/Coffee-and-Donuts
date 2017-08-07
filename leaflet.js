@@ -11,9 +11,8 @@ function initMap(data) {
 };
 
 function addMarker(options, app) {
-  var icon = options.icon ? { iconUrl: options.icon.url ,
-                              iconSize: [options.icon.size.height, options.icon.size.width] }
-                          : null
+  var icon = options.icon && { iconUrl: options.icon.url,
+                               iconSize: [options.icon.size.height, options.icon.size.width] }
 
   var markerOptions = icon ? { icon: L.icon(icon), draggable: options.draggable }
                            : { draggable: options.draggable }

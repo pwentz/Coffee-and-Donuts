@@ -12,9 +12,11 @@ import Json.Encode exposing (Value)
 import Leaflet as L
 import Models exposing (FullVenueData, ShortVenueData)
 import Public
+import Random
 import Secrets
 import Styles
 import Task
+import Tuple
 import VenuePresenter as Present
 
 
@@ -76,7 +78,7 @@ decodeMarkerEvent val =
     in
     case didGoThrough of
         Ok eventData ->
-            OnMarkerClick eventData
+            OnMarkerEvent eventData
 
         Err _ ->
             UpdateMessage "It failed!"
@@ -101,21 +103,16 @@ init =
 -- VIEW
 
 
-contentColumn : Model -> Html msg
-contentColumn model =
+contentRow : Model -> Html msg
+contentRow model =
     case model.currentVenue of
         Nothing ->
             div
-                [ Styles.contentColumn
-                , Styles.defaultContent
-                ]
+                [ Styles.defaultContent ]
                 [ div
-                    [ Styles.filler ]
-                    []
-                , div
-                    [ Styles.venueBannerWrapper ]
+                    [ style [ ( "margin", "auto" ) ] ]
                     [ img
-                        [ Styles.venueBanner
+                        [ Styles.defaultBanner
                         , src Public.defaultBanner
                         ]
                         []
@@ -127,14 +124,13 @@ contentColumn model =
 
         Just venue ->
             div
-                [ Styles.contentColumn ]
-                [ Present.name venue
-                , Present.location venue
-                , h5
-                    []
-                    [ text model.waitingMsg ]
-                , Present.banner venue
-                , hr [] []
+                [ Styles.contentRow ]
+                [ Present.banner venue
+                , div
+                    [ Styles.contentColumn ]
+                    [ Present.name venue
+                    , Present.location venue
+                    ]
                 , Present.hours venue
                 , Present.rating venue
                 , Present.attributes venue
@@ -150,8 +146,7 @@ view model =
             [ text "Coffee & Donuts" ]
         , div
             []
-            [ contentColumn model
-            , div
+            [ div
                 [ Styles.mapWrapper ]
                 [ div
                     [ id "map"
@@ -159,7 +154,10 @@ view model =
                     ]
                     []
                 ]
-            , br [ style [ ( "clear", "both" ) ] ] []
+            , div
+                [ Styles.divider ]
+                []
+            , contentRow model
             ]
         ]
 
@@ -173,7 +171,7 @@ type Msg
     | GetLocation (Result Geo.Error Geo.Location)
     | StartFetchingVenues
     | UpdateMessage String
-    | OnMarkerClick { event : String, lat : Float, lng : Float }
+    | OnMarkerEvent { event : String, lat : Float, lng : Float }
     | FetchVenueData (Result Http.Error FullVenueData)
 
 
@@ -227,32 +225,42 @@ fetchVenueData venueId =
 populateMap : Model -> Cmd Msg
 populateMap model =
     let
+        random =
+            Random.initialSeed 0
+                |> Random.step (Random.int 0 Random.maxInt)
+
         icon =
             { url = Public.venueIcon
             , size = { height = 35, width = 35 }
             }
 
         venueMarkerData =
-            \x ->
-                { lat = x.location.lat
-                , lng = x.location.lng
-                , icon = Just icon
-                , draggable = False
-                , popup = Just x.name
-                , events =
-                    [ { event = "mouseover"
-                      , action = Just "openPopup"
-                      , subscribe = False
-                      }
-                    , { event = "click"
-                      , action = Nothing
-                      , subscribe = True
-                      }
-                    ]
-                }
+            \x ( ( id, seed ), markers ) ->
+                ( Random.step (Random.int 0 Random.maxInt) seed
+                , { id = id
+                  , lat = x.location.lat
+                  , lng = x.location.lng
+                  , icon = Just icon
+                  , draggable = False
+                  , popup = Just x.name
+                  , events =
+                        [ { event = "mouseover"
+                          , action = Just "openPopup"
+                          , subscribe = False
+                          }
+                        , { event = "click"
+                          , action = Nothing
+                          , subscribe = True
+                          }
+                        ]
+                  }
+                    :: markers
+                )
 
         venueMarkers =
-            List.map venueMarkerData model.shortVenues
+            model.shortVenues
+                |> List.foldr venueMarkerData ( random, [] )
+                |> Tuple.second
     in
     L.addMarkers venueMarkers
 
@@ -293,8 +301,7 @@ update msg model =
                     , zoom = 16
                     , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
                     , tileLayerOptions =
-                        { attribution = ""
-                        , maxZoom = 22
+                        { maxZoom = 22
                         , id = "mapbox.streets"
                         , accessToken = Public.mapboxToken
                         }
@@ -313,7 +320,7 @@ update msg model =
         UpdateMessage str ->
             { model | waitingMsg = str } ! []
 
-        OnMarkerClick eventData ->
+        OnMarkerEvent eventData ->
             let
                 hasMatchingCoords =
                     \marker ->

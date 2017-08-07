@@ -10,7 +10,8 @@ type alias Icon =
 
 
 type alias Marker =
-    { lat : Float
+    { id : Int
+    , lat : Float
     , lng : Float
     , icon : Maybe Icon
     , draggable : Bool
@@ -33,8 +34,7 @@ type alias MapData =
     , zoom : Int
     , tileLayer : String
     , tileLayerOptions :
-        { attribution : String
-        , maxZoom : Int
+        { maxZoom : Int
         , id : String
         , accessToken : String
         }
