@@ -327,11 +327,11 @@ update msg model =
                         (marker.location.lat == eventData.lat)
                             && (marker.location.lng == eventData.lng)
 
-                targetMarker =
+                targetVenue =
                     model.shortVenues
                         |> List.filter hasMatchingCoords
             in
-            case targetMarker of
+            case targetVenue of
                 [] ->
                     { model | waitingMsg = "Couldn't find target marker" } ! []
 

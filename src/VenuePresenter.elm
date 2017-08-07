@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Models exposing (FullVenueData)
 import Public
 import Styles
+import Util
 
 
 name : FullVenueData -> Html msg
@@ -52,7 +53,7 @@ location venue =
                 |> Maybe.map
                     (\x ->
                         if String.length x == 10 then
-                            "(" ++ String.left 3 x ++ ")" ++ " " ++ (String.dropRight 4 << String.dropLeft 3) x ++ "-" ++ String.right 4 x
+                            Util.formatPhoneNumber x
                         else
                             x
                     )
