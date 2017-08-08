@@ -131,6 +131,7 @@ venueLocationData =
         [ textAlign center
         , listStyleType none
         , color (hex darkBrown)
+        , padding (px 0)
         ]
 
 
@@ -146,6 +147,7 @@ venueAttributes =
     styles
         [ listStyleType none
         , color (hex darkBrown)
+        , padding (px 0)
         ]
 
 
@@ -161,6 +163,7 @@ venueHours =
     styles
         [ listStyleType none
         , color (hex darkBrown)
+        , padding (px 0)
         ]
 
 
