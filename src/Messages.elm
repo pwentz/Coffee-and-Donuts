@@ -9,7 +9,7 @@ type Msg
     = FetchVenues (Result Http.Error (List (List ShortVenueData)))
     | GetLocation (Result Geo.Error Geo.Location)
     | UpdateMessage String
-    | OnMarkerEvent
+    | OnVenueSelection
         { event : String
         , lat : Float
         , lng : Float

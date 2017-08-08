@@ -2,7 +2,7 @@ module Decoders exposing (..)
 
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Messages exposing (Msg(NewMarker, OnMarkerEvent, UpdateMessage))
+import Messages exposing (Msg(NewMarker, OnVenueSelection, UpdateMessage))
 import Models exposing (FullVenueData, ShortVenueData)
 
 
@@ -44,7 +44,7 @@ decodeMarkerEvent val =
     in
     case didGoThrough of
         Ok eventData ->
-            OnMarkerEvent eventData
+            OnVenueSelection eventData
 
         Err _ ->
             UpdateMessage "It failed!"

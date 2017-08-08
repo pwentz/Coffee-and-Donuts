@@ -1,11 +1,43 @@
-module VenuePresenter exposing (..)
+module VenuePresenter exposing (ViewModel(..), present)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (FullVenueData)
+import Models exposing (FullVenueData, Model)
 import Public
 import Styles
 import Util
+
+
+type ViewModel msg
+    = DefaultView
+    | VenueView
+        { banner : Html msg
+        , primaryInfo : Html msg
+        , hours : Html msg
+        , rating : Html msg
+        , attributes : Html msg
+        }
+
+
+present : Model -> ViewModel a
+present model =
+    case model.currentVenue of
+        Nothing ->
+            DefaultView
+
+        Just venue ->
+            VenueView
+                { banner = banner venue
+                , primaryInfo =
+                    div
+                        [ Styles.contentColumn ]
+                        [ name venue
+                        , location venue
+                        ]
+                , hours = hours venue
+                , rating = rating venue
+                , attributes = attributes venue
+                }
 
 
 name : FullVenueData -> Html msg

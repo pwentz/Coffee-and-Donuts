@@ -6,13 +6,13 @@ import Html.Events as Events
 import Models exposing (Model)
 import Public
 import Styles
-import VenuePresenter as Present
+import VenuePresenter exposing (ViewModel(..))
 
 
-contentRow : Model -> Html msg
-contentRow model =
-    case model.currentVenue of
-        Nothing ->
+renderContent : ViewModel a -> Html a
+renderContent viewModel =
+    case viewModel of
+        DefaultView ->
             div
                 [ Styles.defaultContent ]
                 [ div
@@ -23,28 +23,21 @@ contentRow model =
                         ]
                         []
                     ]
-                , h4
-                    []
-                    [ text model.waitingMsg ]
                 ]
 
-        Just venue ->
+        VenueView { banner, primaryInfo, hours, rating, attributes } ->
             div
                 [ Styles.contentRow ]
-                [ Present.banner venue
-                , div
-                    [ Styles.contentColumn ]
-                    [ Present.name venue
-                    , Present.location venue
-                    ]
-                , Present.hours venue
-                , Present.rating venue
-                , Present.attributes venue
+                [ banner
+                , primaryInfo
+                , hours
+                , rating
+                , attributes
                 ]
 
 
-view : Model -> Html msg
-view model =
+view : ViewModel a -> Html a
+view viewModel =
     div
         []
         [ h2
@@ -63,6 +56,6 @@ view model =
             , div
                 [ Styles.divider ]
                 []
-            , contentRow model
+            , renderContent viewModel
             ]
         ]

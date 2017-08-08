@@ -63,7 +63,7 @@ update msg model =
         UpdateMessage str ->
             { model | waitingMsg = str } ! []
 
-        OnMarkerEvent eventData ->
+        OnVenueSelection eventData ->
             let
                 hasMatchingCoords =
                     \marker ->

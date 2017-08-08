@@ -8,13 +8,14 @@ import Leaflet as L
 import Messages exposing (Msg)
 import Models exposing (Model)
 import Update
+import VenuePresenter
 import View
 
 
 main =
     Html.program
         { init = init
-        , view = View.view
+        , view = View.view << VenuePresenter.present
         , update = Update.update
         , subscriptions =
             \_ ->
