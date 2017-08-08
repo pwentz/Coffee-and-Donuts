@@ -1,7 +1,53 @@
 module Decoders exposing (..)
 
 import Json.Decode as Json
+import Json.Encode exposing (Value)
+import Messages exposing (Msg(NewMarker, OnMarkerEvent, UpdateMessage))
 import Models exposing (FullVenueData, ShortVenueData)
+
+
+decodeOnMarkerCreation : Value -> Msg
+decodeOnMarkerCreation val =
+    let
+        result =
+            Json.decodeValue Json.int val
+    in
+    case result of
+        Ok id ->
+            NewMarker id
+
+        Err _ ->
+            UpdateMessage "Something has gone terribly wrong"
+
+
+decodeMarkerEvent : Value -> Msg
+decodeMarkerEvent val =
+    let
+        eventDataMapping =
+            \e lat lng id ->
+                { event = e
+                , lat = lat
+                , lng = lng
+                , targetId = id
+                }
+
+        didGoThrough =
+            Json.decodeValue
+                (Json.map4
+                    eventDataMapping
+                    (Json.field "event" Json.string)
+                    (Json.field "lat" Json.float)
+                    (Json.field "lng" Json.float)
+                    (Json.field "targetId" Json.int)
+                )
+                val
+    in
+    case didGoThrough of
+        Ok eventData ->
+            OnMarkerEvent eventData
+
+        Err _ ->
+            UpdateMessage "It failed!"
 
 
 foursquareVenuesDecoder : Json.Decoder (List (List ShortVenueData))

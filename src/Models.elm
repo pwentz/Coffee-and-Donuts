@@ -1,5 +1,20 @@
 module Models exposing (..)
 
+import Dict exposing (Dict)
+
+
+type alias Model =
+    { shortVenues : List ShortVenueData
+    , fullVenues : Dict String FullVenueData
+    , location :
+        { lat : Float
+        , lng : Float
+        }
+    , waitingMsg : String
+    , currentVenue : Maybe FullVenueData
+    , leafletMarkers : List Int
+    }
+
 
 type alias ShortVenueData =
     { id : String
