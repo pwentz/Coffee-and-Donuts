@@ -47,10 +47,16 @@ port initMap : MapData -> Cmd msg
 port addMarker : Marker -> Cmd msg
 
 
+port updateIcon : { id : Int, icon : Icon } -> Cmd msg
+
+
+port updateIcons : List { id : Int, icon : Icon } -> Cmd msg
+
+
 port addMarkers : List Marker -> Cmd msg
 
 
-port onMapCreation : (Value -> msg) -> Sub msg
+port onMarkerCreation : (Value -> msg) -> Sub msg
 
 
 port onMarkerEvent : (Value -> msg) -> Sub msg

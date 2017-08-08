@@ -35,11 +35,28 @@ function addMarker(options, app) {
         action && marker[action]();
 
         didSubscribe &&
-          app.ports.onMarkerEvent.send({ event: event, lat: options.lat, lng: options.lng });
+          app.ports.onMarkerEvent.send({
+            event: event,
+            lat: options.lat,
+            lng: options.lng,
+            targetId: marker._leaflet_id
+          });
       });
     });
   };
 
+  app.ports.onMarkerCreation.send(marker._leaflet_id)
+};
+
+
+function updateIcon(options) {
+  var layers = myMap._layers
+  var targetMarker = layers[options.id];
+
+  var icon = { iconUrl: options.icon.url,
+               iconSize: [options.icon.size.height, options.icon.size.width] }
+
+  targetMarker.setIcon(L.icon(icon));
 };
 
 
@@ -49,7 +66,6 @@ function addMarker(options, app) {
 
   app.ports.initMap.subscribe(function(mapData) {
     initMap(mapData);
-    app.ports.onMapCreation.send(true);
   });
 
   app.ports.addMarker.subscribe(function(markerData) {
@@ -59,6 +75,14 @@ function addMarker(options, app) {
   app.ports.addMarkers.subscribe(function(markers) {
     markers.forEach(function(marker) {
       addMarker(marker, app);
+    });
+  });
+
+  app.ports.updateIcon.subscribe(updateIcon);
+
+  app.ports.updateIcons.subscribe(function(iconsData) {
+    iconsData.forEach(function(iconData) {
+      updateIcon(iconData);
     });
   });
 }(window));

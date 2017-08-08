@@ -25,7 +25,12 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
+        , subscriptions =
+            \_ ->
+                Sub.batch
+                    [ L.onMarkerCreation decodeOnMarkerCreation
+                    , L.onMarkerEvent decodeMarkerEvent
+                    ]
         }
 
 
@@ -38,41 +43,43 @@ type alias Model =
         }
     , waitingMsg : String
     , currentVenue : Maybe FullVenueData
+    , leafletMarkers : List Int
     }
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [ L.onMapCreation decodeOnMapCreation
-        , L.onMarkerEvent decodeMarkerEvent
-        ]
-
-
-decodeOnMapCreation : Value -> Msg
-decodeOnMapCreation val =
+decodeOnMarkerCreation : Value -> Msg
+decodeOnMarkerCreation val =
     let
         result =
-            Json.decodeValue Json.bool val
+            Json.decodeValue Json.int val
     in
     case result of
-        Ok _ ->
-            StartFetchingVenues
+        Ok id ->
+            NewMarker id
 
         Err _ ->
-            UpdateMessage "Something went wrong creating your map!"
+            UpdateMessage "Something has gone terribly wrong"
 
 
 decodeMarkerEvent : Value -> Msg
 decodeMarkerEvent val =
     let
+        eventDataMapping =
+            \e lat lng id ->
+                { event = e
+                , lat = lat
+                , lng = lng
+                , targetId = id
+                }
+
         didGoThrough =
             Json.decodeValue
-                (Json.map3
-                    (\e lat lng -> { event = e, lat = lat, lng = lng })
+                (Json.map4
+                    eventDataMapping
                     (Json.field "event" Json.string)
                     (Json.field "lat" Json.float)
                     (Json.field "lng" Json.float)
+                    (Json.field "targetId" Json.int)
                 )
                 val
     in
@@ -95,6 +102,7 @@ init =
     , waitingMsg = ""
     , location = { lat = 0.0, lng = 0.0 }
     , currentVenue = Nothing
+    , leafletMarkers = []
     }
         ! [ getLocation ]
 
@@ -169,10 +177,15 @@ view model =
 type Msg
     = FetchVenues (Result Http.Error (List (List ShortVenueData)))
     | GetLocation (Result Geo.Error Geo.Location)
-    | StartFetchingVenues
     | UpdateMessage String
-    | OnMarkerEvent { event : String, lat : Float, lng : Float }
+    | OnMarkerEvent
+        { event : String
+        , lat : Float
+        , lng : Float
+        , targetId : Int
+        }
     | FetchVenueData (Result Http.Error FullVenueData)
+    | NewMarker Int
 
 
 getLocation : Cmd Msg
@@ -230,7 +243,7 @@ populateMap model =
                 |> Random.step (Random.int 0 Random.maxInt)
 
         icon =
-            { url = Public.venueIcon
+            { url = Public.markerIcon
             , size = { height = 35, width = 35 }
             }
 
@@ -268,9 +281,6 @@ populateMap model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        StartFetchingVenues ->
-            model ! [ fetchVenues model ]
-
         FetchVenues (Ok venues) ->
             let
                 updatedModel =
@@ -298,10 +308,10 @@ update msg model =
                     { divId = "map"
                     , lat = location.latitude
                     , lng = location.longitude
-                    , zoom = 16
+                    , zoom = 17
                     , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
                     , tileLayerOptions =
-                        { maxZoom = 22
+                        { maxZoom = 24
                         , id = "mapbox.streets"
                         , accessToken = Public.mapboxToken
                         }
@@ -315,7 +325,10 @@ update msg model =
                             }
                     }
             in
-            updatedModel ! [ L.initMap mapData ]
+            updatedModel
+                ! [ L.initMap mapData
+                  , fetchVenues updatedModel
+                  ]
 
         UpdateMessage str ->
             { model | waitingMsg = str } ! []
@@ -333,15 +346,38 @@ update msg model =
             in
             case targetVenue of
                 [] ->
-                    { model | waitingMsg = "Couldn't find target marker" } ! []
+                    { model | waitingMsg = "Couldn't find target venue" } ! []
 
                 v :: _ ->
+                    let
+                        assignCurrentIcon markerId =
+                            let
+                                iconUrl =
+                                    if markerId == eventData.targetId then
+                                        Public.currentVenueIcon
+                                    else
+                                        Public.markerIcon
+                            in
+                            { id = markerId
+                            , icon =
+                                { url = iconUrl
+                                , size = { height = 35, width = 35 }
+                                }
+                            }
+
+                        markers =
+                            model.leafletMarkers
+                                |> List.map assignCurrentIcon
+                    in
                     case Dict.get v.id model.fullVenues of
                         Nothing ->
-                            model ! [ fetchVenueData v.id ]
+                            model
+                                ! [ L.updateIcons markers
+                                  , fetchVenueData v.id
+                                  ]
 
                         venue ->
-                            { model | currentVenue = venue } ! []
+                            { model | currentVenue = venue } ! [ L.updateIcons markers ]
 
         FetchVenueData (Ok venueData) ->
             { model
@@ -352,3 +388,6 @@ update msg model =
 
         FetchVenueData (Err _) ->
             { model | waitingMsg = "Something went wrong getting venue" } ! []
+
+        NewMarker id ->
+            { model | leafletMarkers = id :: model.leafletMarkers } ! []
