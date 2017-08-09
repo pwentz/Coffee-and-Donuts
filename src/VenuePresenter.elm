@@ -1,50 +1,24 @@
-module VenuePresenter exposing (ViewModel(..), present)
+module VenuePresenter exposing (present)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (FullVenueData, Model(..))
+import Models exposing (Err(..), FullVenueData, Model(..))
 import Public
 import Styles
 import Util
+import Venues.View
 
 
-type ViewModel msg
-    = DefaultView
-    | ErrorView String
-    | VenueView
-        { banner : Html msg
-        , primaryInfo : Html msg
-        , hours : Html msg
-        , rating : Html msg
-        , attributes : Html msg
-        }
-
-
-present : Model -> ViewModel a
+present : Model -> Maybe (Venues.View.Model a)
 present model =
     case model of
-        LeafletError desc ->
-            ErrorView desc
-
-        FetchVenueError ->
-            ErrorView
-                "Couldn't find venue!"
-
-        GetLocationError ->
-            ErrorView
-                "Couldn't find location!"
-
-        FetchVenuesError ->
-            ErrorView
-                "Couldn't find venues!"
+        Error err ->
+            Just (Venues.View.Error err)
 
         Model model ->
-            case model.currentVenue of
-                Nothing ->
-                    DefaultView
-
-                Just venue ->
-                    VenueView
+            let
+                venueView venue =
+                    Venues.View.Venue
                         { banner = banner venue
                         , primaryInfo =
                             div
@@ -56,6 +30,8 @@ present model =
                         , rating = rating venue
                         , attributes = attributes venue
                         }
+            in
+            Maybe.map venueView model.currentVenue
 
 
 name : FullVenueData -> Html msg

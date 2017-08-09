@@ -3,16 +3,36 @@ module View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events as Events
-import Models exposing (Model)
+import Models exposing (Err(..), Model)
 import Public
 import Styles
-import VenuePresenter exposing (ViewModel(..))
+import Venues.View
 
 
-renderContent : ViewModel a -> Html a
+renderError : Err -> Html a
+renderError err =
+    let
+        toRender =
+            p [] [ text "Oh no!" ]
+    in
+    case err of
+        FetchVenue ->
+            toRender
+
+        GetLocation ->
+            toRender
+
+        FetchVenues ->
+            toRender
+
+        Leaflet _ ->
+            toRender
+
+
+renderContent : Maybe (Venues.View.Model a) -> Html a
 renderContent viewModel =
     case viewModel of
-        DefaultView ->
+        Nothing ->
             div
                 [ Styles.defaultContent ]
                 [ div
@@ -25,7 +45,7 @@ renderContent viewModel =
                     ]
                 ]
 
-        VenueView { banner, primaryInfo, hours, rating, attributes } ->
+        Just (Venues.View.Venue { banner, primaryInfo, hours, rating, attributes }) ->
             div
                 [ Styles.contentRow ]
                 [ banner
@@ -35,16 +55,11 @@ renderContent viewModel =
                 , attributes
                 ]
 
-        ErrorView desc ->
-            div
-                []
-                [ p
-                    []
-                    [ text desc ]
-                ]
+        Just (Venues.View.Error err) ->
+            renderError err
 
 
-view : ViewModel a -> Html a
+view : Maybe (Venues.View.Model a) -> Html a
 view viewModel =
     div
         []

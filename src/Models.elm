@@ -3,11 +3,15 @@ module Models exposing (..)
 import Dict exposing (Dict)
 
 
+type Err
+    = FetchVenue
+    | GetLocation
+    | FetchVenues
+    | Leaflet String
+
+
 type Model
-    = FetchVenueError
-    | GetLocationError
-    | FetchVenuesError
-    | LeafletError String
+    = Error Err
     | Model AppData
 
 

@@ -3,8 +3,8 @@ module Update exposing (..)
 import Commands as C
 import Dict
 import Leaflet as L
-import Messages exposing (..)
-import Models exposing (AppData, Model(..))
+import Messages as Msg exposing (Msg)
+import Models exposing (AppData, Err(..), Model(..))
 import Public
 
 
@@ -21,7 +21,7 @@ update msg model =
 updateModel : Msg -> AppData -> ( Model, Cmd Msg )
 updateModel msg payload =
     case msg of
-        FetchVenues (Ok venues) ->
+        Msg.FetchVenues (Ok venues) ->
             let
                 updatedModel =
                     { payload
@@ -30,7 +30,7 @@ updateModel msg payload =
             in
             Model updatedModel ! [ C.populateMap updatedModel ]
 
-        GetLocation (Ok location) ->
+        Msg.GetLocation (Ok location) ->
             let
                 mapData =
                     { divId = "map"
@@ -58,7 +58,7 @@ updateModel msg payload =
                   , C.fetchVenues updatedModel
                   ]
 
-        OnVenueSelection (Ok eventData) ->
+        Msg.OnVenueSelection (Ok eventData) ->
             let
                 hasMatchingCoords =
                     \marker ->
@@ -104,7 +104,7 @@ updateModel msg payload =
                         venue ->
                             Model { payload | currentVenue = venue } ! [ L.updateIcons markers ]
 
-        FetchVenueData (Ok venueData) ->
+        Msg.FetchVenueData (Ok venueData) ->
             Model
                 { payload
                     | currentVenue = Just venueData
@@ -112,20 +112,20 @@ updateModel msg payload =
                 }
                 ! []
 
-        NewMarker (Ok id) ->
+        Msg.NewMarker (Ok id) ->
             Model { payload | leafletMarkers = id :: payload.leafletMarkers } ! []
 
-        FetchVenueData (Err _) ->
-            FetchVenueError ! []
+        Msg.FetchVenueData (Err _) ->
+            Models.Error Models.FetchVenue ! []
 
-        NewMarker (Err desc) ->
-            LeafletError desc ! []
+        Msg.NewMarker (Err desc) ->
+            Models.Error (Leaflet desc) ! []
 
-        OnVenueSelection (Err desc) ->
-            LeafletError desc ! []
+        Msg.OnVenueSelection (Err desc) ->
+            Models.Error (Leaflet desc) ! []
 
-        FetchVenues (Err _) ->
-            FetchVenuesError ! []
+        Msg.FetchVenues (Err _) ->
+            Models.Error Models.FetchVenues ! []
 
-        GetLocation (Err _) ->
-            GetLocationError ! []
+        Msg.GetLocation (Err _) ->
+            Models.Error Models.GetLocation ! []

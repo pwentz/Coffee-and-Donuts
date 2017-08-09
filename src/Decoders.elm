@@ -8,11 +8,8 @@ import Models exposing (FullVenueData, Model(..), ShortVenueData)
 
 decodeOnMarkerCreation : Value -> Msg
 decodeOnMarkerCreation val =
-    let
-        result =
-            Json.decodeValue Json.int val
-    in
-    NewMarker result
+    NewMarker <|
+        Json.decodeValue Json.int val
 
 
 decodeMarkerEvent : Value -> Msg
