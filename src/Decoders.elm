@@ -2,8 +2,8 @@ module Decoders exposing (..)
 
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Messages exposing (Msg(NewMarker, OnVenueSelection, UpdateMessage))
-import Models exposing (FullVenueData, ShortVenueData)
+import Messages exposing (Msg(NewMarker, OnVenueSelection))
+import Models exposing (FullVenueData, Model(..), ShortVenueData)
 
 
 decodeOnMarkerCreation : Value -> Msg
@@ -12,12 +12,7 @@ decodeOnMarkerCreation val =
         result =
             Json.decodeValue Json.int val
     in
-    case result of
-        Ok id ->
-            NewMarker id
-
-        Err _ ->
-            UpdateMessage "Something has gone terribly wrong"
+    NewMarker result
 
 
 decodeMarkerEvent : Value -> Msg
@@ -42,12 +37,7 @@ decodeMarkerEvent val =
                 )
                 val
     in
-    case didGoThrough of
-        Ok eventData ->
-            OnVenueSelection eventData
-
-        Err _ ->
-            UpdateMessage "It failed!"
+    OnVenueSelection didGoThrough
 
 
 foursquareVenuesDecoder : Json.Decoder (List (List ShortVenueData))

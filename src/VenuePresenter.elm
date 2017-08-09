@@ -2,7 +2,7 @@ module VenuePresenter exposing (ViewModel(..), present)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (FullVenueData, Model)
+import Models exposing (FullVenueData, Model(..))
 import Public
 import Styles
 import Util
@@ -10,6 +10,7 @@ import Util
 
 type ViewModel msg
     = DefaultView
+    | ErrorView String
     | VenueView
         { banner : Html msg
         , primaryInfo : Html msg
@@ -21,23 +22,40 @@ type ViewModel msg
 
 present : Model -> ViewModel a
 present model =
-    case model.currentVenue of
-        Nothing ->
-            DefaultView
+    case model of
+        LeafletError desc ->
+            ErrorView desc
 
-        Just venue ->
-            VenueView
-                { banner = banner venue
-                , primaryInfo =
-                    div
-                        [ Styles.contentColumn ]
-                        [ name venue
-                        , location venue
-                        ]
-                , hours = hours venue
-                , rating = rating venue
-                , attributes = attributes venue
-                }
+        FetchVenueError ->
+            ErrorView
+                "Couldn't find venue!"
+
+        GetLocationError ->
+            ErrorView
+                "Couldn't find location!"
+
+        FetchVenuesError ->
+            ErrorView
+                "Couldn't find venues!"
+
+        Model model ->
+            case model.currentVenue of
+                Nothing ->
+                    DefaultView
+
+                Just venue ->
+                    VenueView
+                        { banner = banner venue
+                        , primaryInfo =
+                            div
+                                [ Styles.contentColumn ]
+                                [ name venue
+                                , location venue
+                                ]
+                        , hours = hours venue
+                        , rating = rating venue
+                        , attributes = attributes venue
+                        }
 
 
 name : FullVenueData -> Html msg

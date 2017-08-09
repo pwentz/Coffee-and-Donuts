@@ -3,14 +3,21 @@ module Models exposing (..)
 import Dict exposing (Dict)
 
 
-type alias Model =
+type Model
+    = FetchVenueError
+    | GetLocationError
+    | FetchVenuesError
+    | LeafletError String
+    | Model AppData
+
+
+type alias AppData =
     { shortVenues : List ShortVenueData
     , fullVenues : Dict String FullVenueData
     , location :
         { lat : Float
         , lng : Float
         }
-    , waitingMsg : String
     , currentVenue : Maybe FullVenueData
     , leafletMarkers : List Int
     }

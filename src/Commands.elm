@@ -6,7 +6,7 @@ import Http
 import Json.Decode as Json
 import Leaflet as L
 import Messages exposing (Msg(FetchVenueData, FetchVenues, GetLocation))
-import Models exposing (Model)
+import Models exposing (AppData)
 import Public
 import Random
 import Secrets
@@ -19,14 +19,14 @@ getLocation =
     Task.attempt GetLocation Geo.now
 
 
-fetchVenues : Model -> Cmd Msg
-fetchVenues model =
+fetchVenues : AppData -> Cmd Msg
+fetchVenues payload =
     let
         params =
             "?ll="
-                ++ toString model.location.lat
+                ++ toString payload.location.lat
                 ++ ","
-                ++ toString model.location.lng
+                ++ toString payload.location.lng
                 ++ "&client_id="
                 ++ Secrets.foursquareClientId
                 ++ "&client_secret="
@@ -61,8 +61,8 @@ fetchVenueData venueId =
     Http.send FetchVenueData request
 
 
-populateMap : Model -> Cmd Msg
-populateMap model =
+populateMap : AppData -> Cmd Msg
+populateMap payload =
     let
         random =
             Random.initialSeed 0
@@ -97,7 +97,7 @@ populateMap model =
                 )
 
         venueMarkers =
-            model.shortVenues
+            payload.shortVenues
                 |> List.foldr venueMarkerData ( random, [] )
                 |> Tuple.second
     in

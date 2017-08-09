@@ -6,7 +6,7 @@ import Dict
 import Html
 import Leaflet as L
 import Messages exposing (Msg)
-import Models exposing (Model)
+import Models exposing (Model(..))
 import Update
 import VenuePresenter
 import View
@@ -28,11 +28,11 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    { shortVenues = []
-    , fullVenues = Dict.empty
-    , waitingMsg = ""
-    , location = { lat = 0.0, lng = 0.0 }
-    , currentVenue = Nothing
-    , leafletMarkers = []
-    }
+    Model
+        { shortVenues = []
+        , fullVenues = Dict.empty
+        , location = { lat = 0.0, lng = 0.0 }
+        , currentVenue = Nothing
+        , leafletMarkers = []
+        }
         ! [ C.getLocation ]

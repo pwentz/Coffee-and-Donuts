@@ -35,6 +35,14 @@ renderContent viewModel =
                 , attributes
                 ]
 
+        ErrorView desc ->
+            div
+                []
+                [ p
+                    []
+                    [ text desc ]
+                ]
+
 
 view : ViewModel a -> Html a
 view viewModel =

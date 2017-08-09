@@ -4,33 +4,31 @@ import Commands as C
 import Dict
 import Leaflet as L
 import Messages exposing (..)
-import Models exposing (Model)
+import Models exposing (AppData, Model(..))
 import Public
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    case model of
+        Model data ->
+            updateModel msg data
+
+        _ ->
+            model ! []
+
+
+updateModel : Msg -> AppData -> ( Model, Cmd Msg )
+updateModel msg payload =
     case msg of
         FetchVenues (Ok venues) ->
             let
                 updatedModel =
-                    { model
+                    { payload
                         | shortVenues = List.concat venues
                     }
             in
-            updatedModel ! [ C.populateMap updatedModel ]
-
-        FetchVenues (Err _) ->
-            { model
-                | waitingMsg = "Something went wrong while we were getting venues!"
-            }
-                ! []
-
-        GetLocation (Err _) ->
-            { model
-                | waitingMsg = "We need your location for the app to function properly!"
-            }
-                ! []
+            Model updatedModel ! [ C.populateMap updatedModel ]
 
         GetLocation (Ok location) ->
             let
@@ -48,22 +46,19 @@ update msg model =
                     }
 
                 updatedModel =
-                    { model
+                    { payload
                         | location =
                             { lat = location.latitude
                             , lng = location.longitude
                             }
                     }
             in
-            updatedModel
+            Model updatedModel
                 ! [ L.initMap mapData
                   , C.fetchVenues updatedModel
                   ]
 
-        UpdateMessage str ->
-            { model | waitingMsg = str } ! []
-
-        OnVenueSelection eventData ->
+        OnVenueSelection (Ok eventData) ->
             let
                 hasMatchingCoords =
                     \marker ->
@@ -71,12 +66,12 @@ update msg model =
                             && (marker.location.lng == eventData.lng)
 
                 targetVenue =
-                    model.shortVenues
+                    payload.shortVenues
                         |> List.filter hasMatchingCoords
             in
             case targetVenue of
                 [] ->
-                    { model | waitingMsg = "Couldn't find target venue" } ! []
+                    Model payload ! []
 
                 v :: _ ->
                     let
@@ -96,28 +91,41 @@ update msg model =
                             }
 
                         markers =
-                            model.leafletMarkers
+                            payload.leafletMarkers
                                 |> List.map assignCurrentIcon
                     in
-                    case Dict.get v.id model.fullVenues of
+                    case Dict.get v.id payload.fullVenues of
                         Nothing ->
-                            model
+                            Model payload
                                 ! [ L.updateIcons markers
                                   , C.fetchVenueData v.id
                                   ]
 
                         venue ->
-                            { model | currentVenue = venue } ! [ L.updateIcons markers ]
+                            Model { payload | currentVenue = venue } ! [ L.updateIcons markers ]
 
         FetchVenueData (Ok venueData) ->
-            { model
-                | currentVenue = Just venueData
-                , fullVenues = Dict.insert venueData.id venueData model.fullVenues
-            }
+            Model
+                { payload
+                    | currentVenue = Just venueData
+                    , fullVenues = Dict.insert venueData.id venueData payload.fullVenues
+                }
                 ! []
 
-        FetchVenueData (Err _) ->
-            { model | waitingMsg = "Something went wrong getting venue" } ! []
+        NewMarker (Ok id) ->
+            Model { payload | leafletMarkers = id :: payload.leafletMarkers } ! []
 
-        NewMarker id ->
-            { model | leafletMarkers = id :: model.leafletMarkers } ! []
+        FetchVenueData (Err _) ->
+            FetchVenueError ! []
+
+        NewMarker (Err desc) ->
+            LeafletError desc ! []
+
+        OnVenueSelection (Err desc) ->
+            LeafletError desc ! []
+
+        FetchVenues (Err _) ->
+            FetchVenuesError ! []
+
+        GetLocation (Err _) ->
+            GetLocationError ! []
