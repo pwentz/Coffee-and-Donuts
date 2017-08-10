@@ -3,10 +3,10 @@ module Messages exposing (..)
 import Geolocation as Geo
 import Http
 import Json.Decode as Json
-import Models exposing (FullVenueData, ShortVenueData)
+import Models exposing (FullVenueData, VenueMarker)
 
 
-type alias VenueEvent =
+type alias MarkerEvent =
     { event : String
     , lat : Float
     , lng : Float
@@ -14,9 +14,13 @@ type alias VenueEvent =
     }
 
 
+type alias Coords =
+    ( Float, Float )
+
+
 type Msg
-    = FetchVenues (Result Http.Error (List (List ShortVenueData)))
+    = FetchVenues (Result Http.Error (List ( Coords, VenueMarker )))
     | GetLocation (Result Geo.Error Geo.Location)
-    | OnVenueSelection (Result String VenueEvent)
+    | OnVenueSelection (Result String MarkerEvent)
     | FetchVenueData (Result Http.Error FullVenueData)
-    | NewMarker (Result String Int)
+    | NewMarker (Result String { id : Int, lat : Float, lng : Float })

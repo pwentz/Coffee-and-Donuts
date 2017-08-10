@@ -15,25 +15,22 @@ type Model
     | Model AppData
 
 
+type alias Coords =
+    ( Float, Float )
+
+
 type alias AppData =
-    { shortVenues : List ShortVenueData
+    { venueMarkers : Dict Coords VenueMarker
     , fullVenues : Dict String FullVenueData
-    , location :
-        { lat : Float
-        , lng : Float
-        }
+    , location : Coords
     , currentVenue : Maybe FullVenueData
-    , leafletMarkers : List Int
     }
 
 
-type alias ShortVenueData =
-    { id : String
+type alias VenueMarker =
+    { venueId : String
+    , markerId : Maybe Int
     , name : String
-    , location :
-        { lat : Float
-        , lng : Float
-        }
     }
 
 

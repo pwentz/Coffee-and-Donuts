@@ -20,12 +20,8 @@ present model =
                 venueView venue =
                     Venues.View.Venue
                         { banner = banner venue
-                        , primaryInfo =
-                            div
-                                [ Styles.contentColumn ]
-                                [ name venue
-                                , location venue
-                                ]
+                        , name = name venue
+                        , location = location venue
                         , hours = hours venue
                         , rating = rating venue
                         , attributes = attributes venue

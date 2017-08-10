@@ -29,10 +29,9 @@ main =
 init : ( Model, Cmd Msg )
 init =
     Model
-        { shortVenues = []
+        { venueMarkers = Dict.empty
         , fullVenues = Dict.empty
-        , location = { lat = 0.0, lng = 0.0 }
+        , location = ( 0, 0 )
         , currentVenue = Nothing
-        , leafletMarkers = []
         }
         ! [ C.getLocation ]

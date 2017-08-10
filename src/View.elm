@@ -45,11 +45,15 @@ renderContent viewModel =
                     ]
                 ]
 
-        Just (Venues.View.Venue { banner, primaryInfo, hours, rating, attributes }) ->
+        Just (Venues.View.Venue { banner, name, location, hours, rating, attributes }) ->
             div
                 [ Styles.contentRow ]
                 [ banner
-                , primaryInfo
+                , div
+                    [ Styles.contentColumn ]
+                    [ name
+                    , location
+                    ]
                 , hours
                 , rating
                 , attributes

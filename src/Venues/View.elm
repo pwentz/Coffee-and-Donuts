@@ -8,7 +8,8 @@ type Model msg
     = Error Err
     | Venue
         { banner : Html msg
-        , primaryInfo : Html msg
+        , name : Html msg
+        , location : Html msg
         , hours : Html msg
         , rating : Html msg
         , attributes : Html msg

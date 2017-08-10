@@ -45,7 +45,11 @@ function addMarker(options, app) {
     });
   };
 
-  app.ports.onMarkerCreation.send(marker._leaflet_id)
+  app.ports.onMarkerCreation.send({
+    id: marker._leaflet_id,
+    lat: options.lat,
+    lng: options.lng
+  });
 };
 
 

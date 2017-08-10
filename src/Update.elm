@@ -4,8 +4,9 @@ import Commands as C
 import Dict
 import Leaflet as L
 import Messages as Msg exposing (Msg)
-import Models exposing (AppData, Err(..), Model(..))
+import Models exposing (AppData, Coords, Err(..), Model(..), VenueMarker)
 import Public
+import Tuple
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -18,91 +19,83 @@ update msg model =
             model ! []
 
 
+type alias VenueMarkerOptions =
+    { events : List L.MarkerEvent
+    , display : String
+    , venue : ( Coords, VenueMarker )
+    }
+
+
 updateModel : Msg -> AppData -> ( Model, Cmd Msg )
 updateModel msg payload =
     case msg of
         Msg.FetchVenues (Ok venues) ->
             let
-                updatedModel =
-                    { payload
-                        | shortVenues = List.concat venues
-                    }
+                markerEvents =
+                    [ { event = "mouseover"
+                      , action = Just "openPopup"
+                      , subscribe = False
+                      }
+                    , { event = "click"
+                      , action = Nothing
+                      , subscribe = True
+                      }
+                    ]
+
+                toMarker =
+                    L.defaultMarker
+                        << VenueMarkerOptions markerEvents Public.markerIcon
             in
-            Model updatedModel ! [ C.populateMap updatedModel ]
+            Model { payload | venueMarkers = Dict.fromList venues }
+                ! [ L.addMarkers <|
+                        List.map toMarker venues
+                  ]
 
         Msg.GetLocation (Ok location) ->
             let
-                mapData =
-                    { divId = "map"
-                    , lat = location.latitude
-                    , lng = location.longitude
-                    , zoom = 17
-                    , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
-                    , tileLayerOptions =
-                        { maxZoom = 24
-                        , id = "mapbox.streets"
-                        , accessToken = Public.mapboxToken
-                        }
-                    }
-
-                updatedModel =
-                    { payload
-                        | location =
-                            { lat = location.latitude
-                            , lng = location.longitude
-                            }
-                    }
+                currentLocation =
+                    ( location.latitude, location.longitude )
             in
-            Model updatedModel
-                ! [ L.initMap mapData
-                  , C.fetchVenues updatedModel
+            Model { payload | location = currentLocation }
+                ! [ L.initMap (L.defaultMap currentLocation "map")
+                  , C.fetchVenues currentLocation
                   ]
 
-        Msg.OnVenueSelection (Ok eventData) ->
+        Msg.OnVenueSelection (Ok { lat, lng, targetId, event }) ->
             let
-                hasMatchingCoords =
-                    \marker ->
-                        (marker.location.lat == eventData.lat)
-                            && (marker.location.lng == eventData.lng)
-
-                targetVenue =
-                    payload.shortVenues
-                        |> List.filter hasMatchingCoords
-            in
-            case targetVenue of
-                [] ->
-                    Model payload ! []
-
-                v :: _ ->
+                applyVenueData targetVenue =
                     let
                         assignCurrentIcon markerId =
-                            let
-                                iconUrl =
-                                    if markerId == eventData.targetId then
-                                        Public.currentVenueIcon
-                                    else
-                                        Public.markerIcon
-                            in
                             { id = markerId
                             , icon =
-                                { url = iconUrl
-                                , size = { height = 35, width = 35 }
-                                }
+                                L.icon
+                                    (if markerId == targetId then
+                                        Public.currentVenueIcon
+                                     else
+                                        Public.markerIcon
+                                    )
                             }
 
                         markers =
-                            payload.leafletMarkers
+                            payload.venueMarkers
+                                |> Dict.values
+                                |> List.filterMap .markerId
                                 |> List.map assignCurrentIcon
                     in
-                    case Dict.get v.id payload.fullVenues of
+                    case Dict.get targetVenue.venueId payload.fullVenues of
                         Nothing ->
                             Model payload
                                 ! [ L.updateIcons markers
-                                  , C.fetchVenueData v.id
+                                  , C.fetchVenueData targetVenue.venueId
                                   ]
 
                         venue ->
                             Model { payload | currentVenue = venue } ! [ L.updateIcons markers ]
+            in
+            payload.venueMarkers
+                |> Dict.get ( lat, lng )
+                |> Maybe.map applyVenueData
+                |> Maybe.withDefault (Models.Error FetchVenue ! [])
 
         Msg.FetchVenueData (Ok venueData) ->
             Model
@@ -112,8 +105,24 @@ updateModel msg payload =
                 }
                 ! []
 
-        Msg.NewMarker (Ok id) ->
-            Model { payload | leafletMarkers = id :: payload.leafletMarkers } ! []
+        Msg.NewMarker (Ok { id, lat, lng }) ->
+            let
+                targetVenue =
+                    payload.venueMarkers
+                        |> Dict.get ( lat, lng )
+            in
+            case targetVenue of
+                Nothing ->
+                    Models.Error Models.FetchVenues ! []
+
+                Just v ->
+                    Model
+                        { payload
+                            | venueMarkers =
+                                payload.venueMarkers
+                                    |> Dict.insert ( lat, lng ) { v | markerId = Just id }
+                        }
+                        ! []
 
         Msg.FetchVenueData (Err _) ->
             Models.Error Models.FetchVenue ! []
