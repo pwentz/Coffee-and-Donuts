@@ -1,13 +1,10 @@
 module Models exposing (..)
 
 import Dict exposing (Dict)
+import Error.Model as Err exposing (Err)
 
 
-type Err
-    = FetchVenue
-    | GetLocation
-    | FetchVenues
-    | Leaflet String
+-- TODO: Make Model opaque?
 
 
 type Model

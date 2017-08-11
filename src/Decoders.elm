@@ -1,9 +1,11 @@
 module Decoders exposing (..)
 
+import Error.Model as Err
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Messages exposing (MarkerEvent, Msg(NewMarker, OnVenueSelection))
+import Messages as Msg exposing (MarkerEvent, Msg)
 import Models exposing (FullVenueData, Model(..), VenueMarker)
+import Result
 
 
 decodeOnMarkerCreation : Value -> Msg
@@ -18,8 +20,17 @@ decodeOnMarkerCreation val =
                     (Json.field "lng" Json.float)
                 )
                 val
+
+        dispatchResult res =
+            case res of
+                Err _ ->
+                    Msg.initWithError <|
+                        Err.Leaflet "failed on marker creation"
+
+                Ok eventData ->
+                    (Msg.init << Msg.NewMarker) eventData
     in
-    NewMarker didGoThrough
+    dispatchResult didGoThrough
 
 
 decodeMarkerEvent : Value -> Msg
@@ -35,8 +46,16 @@ decodeMarkerEvent val =
                     (Json.field "targetId" Json.int)
                 )
                 val
+
+        dispatch res =
+            case res of
+                Err _ ->
+                    Msg.initWithError (Err.Leaflet "failed on marker event")
+
+                Ok eventData ->
+                    (Msg.init << Msg.OnVenueSelection) eventData
     in
-    OnVenueSelection didGoThrough
+    dispatch didGoThrough
 
 
 foursquareVenuesDecoder : Json.Decoder (List ( ( Float, Float ), VenueMarker ))

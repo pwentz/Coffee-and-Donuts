@@ -1,22 +1,29 @@
-module Commands exposing (..)
+module Command.Actions exposing (..)
 
 import Decoders as Decode
+import Error.Model as Err
 import Geolocation as Geo
 import Http
 import Json.Decode as Json
-import Leaflet as L
-import Messages exposing (Msg(FetchVenueData, FetchVenues, GetLocation))
+import Messages as Msg exposing (Msg)
 import Models exposing (Coords)
 import Public
-import Random
 import Secrets
 import Task
-import Tuple
 
 
 getLocation : Cmd Msg
 getLocation =
-    Task.attempt GetLocation Geo.now
+    let
+        dispatch res =
+            case res of
+                Err _ ->
+                    Msg.initWithError Err.GetLocation
+
+                Ok location ->
+                    (Msg.init << Msg.GetLocation) location
+    in
+    Task.attempt dispatch Geo.now
 
 
 fetchVenues : Coords -> Cmd Msg
@@ -38,8 +45,16 @@ fetchVenues ( lat, lng ) =
 
         request =
             Http.get url Decode.foursquareVenuesDecoder
+
+        dispatch res =
+            case res of
+                Err _ ->
+                    Msg.initWithError Err.FetchVenues
+
+                Ok venues ->
+                    (Msg.init << Msg.FetchVenues) venues
     in
-    Http.send FetchVenues request
+    Http.send dispatch request
 
 
 fetchVenueData : String -> Cmd Msg
@@ -57,5 +72,13 @@ fetchVenueData venueId =
 
         request =
             Http.get url (Json.at [ "response", "venue" ] Decode.fullVenueDecoder)
+
+        dispatch res =
+            case res of
+                Err _ ->
+                    Msg.initWithError Err.FetchVenue
+
+                Ok venue ->
+                    (Msg.init << Msg.FetchVenueData) venue
     in
-    Http.send FetchVenueData request
+    Http.send dispatch request

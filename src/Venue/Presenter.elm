@@ -1,33 +1,37 @@
-module VenuePresenter exposing (present)
+module Venue.Presenter exposing (presentWithDefault)
 
+import Error.View as ErrView exposing (ViewResult)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (Err(..), FullVenueData, Model(..))
+import Models exposing (FullVenueData, Model(..))
 import Public
 import Styles
 import Util
-import Venues.View
 
 
-present : Model -> Maybe (Venues.View.Model a)
-present model =
-    case model of
-        Error err ->
-            Just (Venues.View.Error err)
+presentWithDefault : Html a -> ViewResult a -> Html a
+presentWithDefault defaultView viewResult =
+    let
+        onCurrentVenue venue =
+            div
+                [ Styles.contentRow ]
+                [ banner venue
+                , div
+                    [ Styles.contentColumn ]
+                    [ name venue
+                    , location venue
+                    ]
+                , hours venue
+                , rating venue
+                , attributes venue
+                ]
 
-        Model model ->
-            let
-                venueView venue =
-                    Venues.View.Venue
-                        { banner = banner venue
-                        , name = name venue
-                        , location = location venue
-                        , hours = hours venue
-                        , rating = rating venue
-                        , attributes = attributes venue
-                        }
-            in
-            Maybe.map venueView model.currentVenue
+        venueView appData =
+            appData.currentVenue
+                |> Maybe.map onCurrentVenue
+                |> Maybe.withDefault defaultView
+    in
+    ErrView.apply venueView viewResult
 
 
 name : FullVenueData -> Html msg
