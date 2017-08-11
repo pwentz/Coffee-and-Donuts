@@ -1,22 +1,23 @@
-module Update exposing (update)
+module App.Update exposing (update)
 
+import App.Model exposing (Coords, Model)
 import Command.Actions as Actions
 import Dict
 import Error.Model as Err
 import Leaflet as L
-import Messages as Msg exposing (Msg)
-import Models exposing (AppData, Coords, Model(..), VenueMarker)
+import Msg exposing (Msg)
 import Public
+import Venue.Model
 
 
 type alias VenueMarkerOptions =
     { events : List L.MarkerEvent
     , display : String
-    , venue : ( Coords, VenueMarker )
+    , venue : ( Coords, Venue.Model.Marker )
     }
 
 
-update : ( Msg.Success, AppData ) -> ( Model, Cmd Msg )
+update : ( Msg.Success, App.Model.Data ) -> ( Model, Cmd Msg )
 update ( msg, payload ) =
     case msg of
         Msg.FetchVenues venues ->
@@ -36,7 +37,7 @@ update ( msg, payload ) =
                     L.defaultMarker
                         << VenueMarkerOptions markerEvents Public.markerIcon
             in
-            Model { payload | venueMarkers = Dict.fromList venues }
+            App.Model.init { payload | venueMarkers = Dict.fromList venues }
                 ! [ L.addMarkers <|
                         List.map toMarker venues
                   ]
@@ -46,7 +47,7 @@ update ( msg, payload ) =
                 currentLocation =
                     ( location.latitude, location.longitude )
             in
-            Model { payload | location = currentLocation }
+            App.Model.init { payload | location = currentLocation }
                 ! [ L.initMap (L.defaultMap currentLocation "map")
                   , Actions.fetchVenues currentLocation
                   ]
@@ -74,24 +75,24 @@ update ( msg, payload ) =
                     in
                     case Dict.get targetVenue.venueId payload.fullVenues of
                         Nothing ->
-                            Model payload
+                            App.Model.init payload
                                 ! [ L.updateIcons markers
                                   , Actions.fetchVenueData targetVenue.venueId
                                   ]
 
                         venue ->
-                            Model { payload | currentVenue = venue } ! [ L.updateIcons markers ]
+                            App.Model.init { payload | currentVenue = venue } ! [ L.updateIcons markers ]
             in
             payload.venueMarkers
                 |> Dict.get ( lat, lng )
                 |> Maybe.map applyVenueData
-                |> Maybe.withDefault (Models.Error Err.FetchVenue ! [])
+                |> Maybe.withDefault (App.Model.initWithError Err.FetchVenue ! [])
 
         Msg.FetchVenueData venueData ->
-            Model
+            App.Model.init
                 { payload
                     | currentVenue = Just venueData
-                    , fullVenues = Dict.insert venueData.id venueData payload.fullVenues
+                    , fullVenues = Dict.insert (.id venueData) venueData (.fullVenues payload)
                 }
                 ! []
 
@@ -103,10 +104,10 @@ update ( msg, payload ) =
             in
             case targetVenue of
                 Nothing ->
-                    Models.Error Err.FetchVenues ! []
+                    App.Model.initWithError Err.FetchVenues ! []
 
                 Just v ->
-                    Model
+                    App.Model.init
                         { payload
                             | venueMarkers =
                                 payload.venueMarkers

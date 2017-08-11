@@ -1,5 +1,8 @@
 module Main exposing (..)
 
+import App.Model exposing (Model)
+import App.Update
+import App.View
 import Command.Actions as Actions
 import Command.Model
 import Decoders as Decode
@@ -7,24 +10,21 @@ import Dict
 import Error.View
 import Html exposing (Html)
 import Leaflet as L
-import Messages as Msg exposing (Msg)
-import Models exposing (Model(..))
-import Update
+import Msg exposing (Msg)
 import Venue.Presenter
-import View
 
 
 view : Model -> Html a
 view =
-    View.view
-        << Venue.Presenter.presentWithDefault View.defaultVenueView
+    App.View.view
+        << Venue.Presenter.presentWithDefault App.View.defaultVenueView
         << Error.View.present
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     Command.Model.init msg model
-        |> Command.Model.apply Update.update
+        |> Command.Model.apply App.Update.update
 
 
 main =
@@ -43,7 +43,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    Model
+    App.Model.init
         { venueMarkers = Dict.empty
         , fullVenues = Dict.empty
         , location = ( 0, 0 )

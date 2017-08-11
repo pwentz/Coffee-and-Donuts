@@ -1,15 +1,15 @@
 module Command.Model exposing (CommandResult, apply, init)
 
-import Messages as Msg exposing (Msg, Success)
-import Models exposing (AppData, Model)
+import App.Model exposing (Model)
+import Msg exposing (Msg, Success)
 
 
 type CommandResult
-    = Successful ( Success, AppData )
+    = Successful ( Success, App.Model.Data )
     | Failure Model
 
 
-apply : (( Success, AppData ) -> ( Model, Cmd Msg )) -> CommandResult -> ( Model, Cmd Msg )
+apply : (( Success, App.Model.Data ) -> ( Model, Cmd Msg )) -> CommandResult -> ( Model, Cmd Msg )
 apply f commandRes =
     case commandRes of
         Successful data ->
@@ -21,16 +21,12 @@ apply f commandRes =
 
 init : Msg -> Model -> CommandResult
 init msg model =
-    case model of
-        Models.Error _ ->
-            Failure model
-
-        Models.Model appData ->
+    let
+        onData data =
             let
-                failure err =
-                    Failure (Models.Error err)
-
                 success succ =
-                    Successful ( succ, appData )
+                    Successful ( succ, data )
             in
-            Msg.applyWithDefault success failure msg
+            Msg.applyWithDefault success (Failure << App.Model.initWithError) msg
+    in
+    App.Model.applyWithDefault onData (\_ -> Failure model) model

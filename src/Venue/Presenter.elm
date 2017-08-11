@@ -1,12 +1,13 @@
 module Venue.Presenter exposing (presentWithDefault)
 
+import App.Model exposing (Model)
 import Error.View as ErrView exposing (ViewResult)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (FullVenueData, Model(..))
 import Public
 import Styles
 import Util
+import Venue.Model
 
 
 presentWithDefault : Html a -> ViewResult a -> Html a
@@ -34,14 +35,14 @@ presentWithDefault defaultView viewResult =
     ErrView.apply venueView viewResult
 
 
-name : FullVenueData -> Html msg
+name : Venue.Model.Venue -> Html msg
 name venue =
     h1
         [ Styles.venueHeader ]
         [ text venue.name ]
 
 
-banner : FullVenueData -> Html msg
+banner : Venue.Model.Venue -> Html msg
 banner venue =
     let
         getBanner =
@@ -71,7 +72,7 @@ banner venue =
         ]
 
 
-location : FullVenueData -> Html msg
+location : Venue.Model.Venue -> Html msg
 location venue =
     let
         phoneNumber =
@@ -94,7 +95,7 @@ location venue =
     locationData
 
 
-hours : FullVenueData -> Html msg
+hours : Venue.Model.Venue -> Html msg
 hours venue =
     let
         popular =
@@ -117,7 +118,7 @@ hours venue =
         ]
 
 
-rating : FullVenueData -> Html msg
+rating : Venue.Model.Venue -> Html msg
 rating venue =
     let
         rating =
@@ -139,7 +140,7 @@ rating venue =
         rating
 
 
-attributes : FullVenueData -> Html msg
+attributes : Venue.Model.Venue -> Html msg
 attributes venue =
     let
         attrs =

@@ -3,9 +3,9 @@ module Decoders exposing (..)
 import Error.Model as Err
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Messages as Msg exposing (MarkerEvent, Msg)
-import Models exposing (FullVenueData, Model(..), VenueMarker)
+import Msg exposing (MarkerEvent, Msg)
 import Result
+import Venue.Model
 
 
 decodeOnMarkerCreation : Value -> Msg
@@ -21,7 +21,7 @@ decodeOnMarkerCreation val =
                 )
                 val
 
-        dispatchResult res =
+        dispatch res =
             case res of
                 Err _ ->
                     Msg.initWithError <|
@@ -30,7 +30,7 @@ decodeOnMarkerCreation val =
                 Ok eventData ->
                     (Msg.init << Msg.NewMarker) eventData
     in
-    dispatchResult didGoThrough
+    dispatch didGoThrough
 
 
 decodeMarkerEvent : Value -> Msg
@@ -58,7 +58,7 @@ decodeMarkerEvent val =
     dispatch didGoThrough
 
 
-foursquareVenuesDecoder : Json.Decoder (List ( ( Float, Float ), VenueMarker ))
+foursquareVenuesDecoder : Json.Decoder (List ( ( Float, Float ), Venue.Model.Marker ))
 foursquareVenuesDecoder =
     Json.map
         List.concat
@@ -70,7 +70,7 @@ foursquareVenuesDecoder =
         )
 
 
-venueDecoder : Json.Decoder ( ( Float, Float ), VenueMarker )
+venueDecoder : Json.Decoder ( ( Float, Float ), Venue.Model.Marker )
 venueDecoder =
     let
         venueMarker venueId name =
@@ -78,17 +78,15 @@ venueDecoder =
             , name = name
             , markerId = Nothing
             }
-
-        jsonLocation =
-            Json.field "location" <|
-                Json.map2
-                    (\lat lng -> ( lat, lng ))
-                    (Json.field "lat" Json.float)
-                    (Json.field "lng" Json.float)
     in
     Json.map2
-        (\( lat, lng ) vm -> ( ( lat, lng ), vm ))
-        jsonLocation
+        (,)
+        (Json.field "location" <|
+            Json.map2
+                (\lat lng -> ( lat, lng ))
+                (Json.field "lat" Json.float)
+                (Json.field "lng" Json.float)
+        )
         (Json.map2
             venueMarker
             (Json.field "id" Json.string)
@@ -104,10 +102,10 @@ type alias VenuePhoto =
     }
 
 
-fullVenueDecoder : Json.Decoder FullVenueData
+fullVenueDecoder : Json.Decoder Venue.Model.Venue
 fullVenueDecoder =
     Json.map8
-        FullVenueData
+        Venue.Model.Venue
         (Json.field "id" Json.string)
         (Json.field "name" Json.string)
         (Json.field "location" <|

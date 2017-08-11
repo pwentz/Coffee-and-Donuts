@@ -5,6 +5,7 @@ import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Http
 import Json.Decode as Json
+import Result
 import Test exposing (..)
 
 
@@ -31,17 +32,21 @@ suite =
                             Json.decodeString
                                 (Json.at [ "venue" ] venueDecoder)
                                 venue
+
+                        expected =
+                            ( ( 40.69846219320118, -73.99670720100403 )
+                            , { venueId = "4e713390fa766da6339dc53f"
+                              , name = "Brooklyn Bridge Promenade"
+                              , markerId = Nothing
+                              }
+                            )
                     in
-                    Expect.equal decodedOutput
-                        (Ok
-                            { id = "4e713390fa766da6339dc53f"
-                            , name = "Brooklyn Bridge Promenade"
-                            , location =
-                                { lat = 40.69846219320118
-                                , lng = -73.99670720100403
-                                }
-                            }
-                        )
+                    case decodedOutput of
+                        Ok result ->
+                            Expect.equal result expected
+
+                        Err msg ->
+                            Expect.fail msg
             ]
         , describe "FullVenueDecoder"
             [ test "it decodes large venue data" <|

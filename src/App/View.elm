@@ -1,4 +1,4 @@
-module View exposing (..)
+module App.View exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

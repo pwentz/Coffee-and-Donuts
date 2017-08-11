@@ -1,37 +1,14 @@
-module Models exposing (..)
-
-import Dict exposing (Dict)
-import Error.Model as Err exposing (Err)
+module Venue.Model exposing (..)
 
 
--- TODO: Make Model opaque?
-
-
-type Model
-    = Error Err
-    | Model AppData
-
-
-type alias Coords =
-    ( Float, Float )
-
-
-type alias AppData =
-    { venueMarkers : Dict Coords VenueMarker
-    , fullVenues : Dict String FullVenueData
-    , location : Coords
-    , currentVenue : Maybe FullVenueData
-    }
-
-
-type alias VenueMarker =
+type alias Marker =
     { venueId : String
     , markerId : Maybe Int
     , name : String
     }
 
 
-type alias FullVenueData =
+type alias Venue =
     { id : String
     , name : String
     , location : List String

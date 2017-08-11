@@ -1,12 +1,12 @@
 module Command.Actions exposing (..)
 
+import App.Model exposing (Coords)
 import Decoders as Decode
 import Error.Model as Err
 import Geolocation as Geo
 import Http
 import Json.Decode as Json
-import Messages as Msg exposing (Msg)
-import Models exposing (Coords)
+import Msg exposing (Msg)
 import Public
 import Secrets
 import Task

@@ -1,4 +1,4 @@
-module Messages
+module Msg
     exposing
         ( MarkerEvent
         , Msg
@@ -8,11 +8,12 @@ module Messages
         , initWithError
         )
 
+import App.Model exposing (Coords)
 import Error.Model exposing (Err)
 import Geolocation as Geo
 import Http
 import Json.Decode as Json
-import Models exposing (AppData, Coords, FullVenueData, Model, VenueMarker)
+import Venue.Model
 
 
 type alias MarkerEvent =
@@ -29,10 +30,10 @@ type Msg
 
 
 type Success
-    = FetchVenues (List ( Coords, VenueMarker ))
+    = FetchVenues (List ( Coords, Venue.Model.Marker ))
     | GetLocation Geo.Location
     | OnVenueSelection MarkerEvent
-    | FetchVenueData FullVenueData
+    | FetchVenueData Venue.Model.Venue
     | NewMarker { id : Int, lat : Float, lng : Float }
 
 
@@ -47,10 +48,10 @@ applyWithDefault onSuccess onFail msg =
 
 
 initWithError : Err -> Msg
-initWithError err =
-    Error err
+initWithError =
+    Error
 
 
 init : Success -> Msg
-init succ =
-    Msg succ
+init =
+    Msg

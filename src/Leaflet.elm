@@ -1,9 +1,10 @@
 port module Leaflet exposing (..)
 
+import App.Model exposing (Coords)
 import Json.Encode exposing (Value)
-import Models exposing (Coords, VenueMarker)
 import Public
 import Tuple
+import Venue.Model
 
 
 type alias Icon =
@@ -79,7 +80,7 @@ defaultMap ( lat, lng ) mapId =
     }
 
 
-defaultMarker : { venue : ( Coords, VenueMarker ), events : List MarkerEvent, display : String } -> Marker
+defaultMarker : { venue : ( Coords, Venue.Model.Marker ), events : List MarkerEvent, display : String } -> Marker
 defaultMarker { venue, events, display } =
     { lat = (Tuple.first << Tuple.first) venue
     , lng = (Tuple.second << Tuple.first) venue
