@@ -28,18 +28,18 @@ present model =
 view : Err -> Html msg
 view err =
     let
-        toRender =
-            p [] [ text "Oh no!" ]
+        toRender msg =
+            p [] [ text msg ]
     in
     case err of
         Err.FetchVenue ->
-            toRender
+            toRender "Something went wrong while fetching this venue!"
 
         Err.GetLocation ->
-            toRender
+            toRender "Must enable location!"
 
         Err.FetchVenues ->
-            toRender
+            toRender "Something went wrong while fetching venues!"
 
-        Err.Leaflet _ ->
-            toRender
+        Err.Leaflet msg ->
+            toRender msg

@@ -18,7 +18,7 @@ type alias VenueMarkerOptions =
 
 
 update : ( Msg.Success, App.Model.Data ) -> ( Model, Cmd Msg )
-update ( msg, payload ) =
+update ( msg, { venueMarkers, fullVenues, location, currentVenue } as payload ) =
     case msg of
         Msg.FetchVenues venues ->
             let
@@ -68,7 +68,7 @@ update ( msg, payload ) =
                             }
 
                         markers =
-                            payload.venueMarkers
+                            venueMarkers
                                 |> Dict.values
                                 |> List.filterMap .markerId
                                 |> List.map assignCurrentIcon
@@ -83,7 +83,7 @@ update ( msg, payload ) =
                         venue ->
                             App.Model.init { payload | currentVenue = venue } ! [ L.updateIcons markers ]
             in
-            payload.venueMarkers
+            venueMarkers
                 |> Dict.get ( lat, lng )
                 |> Maybe.map applyVenueData
                 |> Maybe.withDefault (App.Model.initWithError Err.FetchVenue ! [])
@@ -99,7 +99,7 @@ update ( msg, payload ) =
         Msg.NewMarker { id, lat, lng } ->
             let
                 targetVenue =
-                    payload.venueMarkers
+                    venueMarkers
                         |> Dict.get ( lat, lng )
             in
             case targetVenue of
@@ -110,7 +110,7 @@ update ( msg, payload ) =
                     App.Model.init
                         { payload
                             | venueMarkers =
-                                payload.venueMarkers
+                                venueMarkers
                                     |> Dict.insert ( lat, lng ) { v | markerId = Just id }
                         }
                         ! []

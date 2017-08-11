@@ -17,7 +17,7 @@ import Venue.Presenter
 view : Model -> Html a
 view =
     App.View.view
-        << Venue.Presenter.presentWithDefault App.View.defaultVenueView
+        << Venue.Presenter.withDefault App.View.defaultVenue
         << Error.View.present
 
 
@@ -37,6 +37,7 @@ main =
                 Sub.batch
                     [ L.onMarkerCreation Decode.decodeOnMarkerCreation
                     , L.onMarkerEvent Decode.decodeMarkerEvent
+                    , L.jsError Decode.decodeJsError
                     ]
         }
 

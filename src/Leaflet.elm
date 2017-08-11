@@ -3,7 +3,6 @@ port module Leaflet exposing (..)
 import App.Model exposing (Coords)
 import Json.Encode exposing (Value)
 import Public
-import Tuple
 import Venue.Model
 
 
@@ -65,6 +64,9 @@ port onMarkerCreation : (Value -> msg) -> Sub msg
 port onMarkerEvent : (Value -> msg) -> Sub msg
 
 
+port jsError : (Value -> msg) -> Sub msg
+
+
 defaultMap : Coords -> String -> MapData
 defaultMap ( lat, lng ) mapId =
     { divId = mapId
@@ -82,11 +84,15 @@ defaultMap ( lat, lng ) mapId =
 
 defaultMarker : { venue : ( Coords, Venue.Model.Marker ), events : List MarkerEvent, display : String } -> Marker
 defaultMarker { venue, events, display } =
-    { lat = (Tuple.first << Tuple.first) venue
-    , lng = (Tuple.second << Tuple.first) venue
+    let
+        ( ( lat, lng ), { venueId, markerId, name } ) =
+            venue
+    in
+    { lat = lat
+    , lng = lng
     , icon = Just (icon display)
     , draggable = False
-    , popup = Just <| (.name << Tuple.second) venue
+    , popup = Just name
     , events = events
     }
 

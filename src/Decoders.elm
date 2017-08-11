@@ -8,6 +8,25 @@ import Result
 import Venue.Model
 
 
+decodeJsError : Value -> Msg
+decodeJsError val =
+    let
+        hasMsg =
+            Json.decodeValue Json.string val
+
+        dispatch res =
+            case res of
+                Err msg ->
+                    Msg.initWithError <|
+                        Err.Leaflet msg
+
+                Ok errMsg ->
+                    Msg.initWithError <|
+                        Err.Leaflet errMsg
+    in
+    dispatch hasMsg
+
+
 decodeOnMarkerCreation : Value -> Msg
 decodeOnMarkerCreation val =
     let

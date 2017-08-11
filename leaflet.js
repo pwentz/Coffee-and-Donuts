@@ -63,30 +63,31 @@ function updateIcon(options) {
   targetMarker.setIcon(L.icon(icon));
 };
 
+function addMarkers(markers, app) {
+  markers.forEach(function(marker) {
+    addMarker(marker, app);
+  })
+}
+
+function updateIcons(icons) {
+  icons.forEach(updateIcon)
+}
+
 
 (function(window) {
   var node = document.getElementById("app");
   var app = Elm.Main.embed(node);
+  var safe = function(fn) { try { fn() } catch (err) { app.ports.jsError.send(err.message) } }
 
-  app.ports.initMap.subscribe(function(mapData) {
-    initMap(mapData);
-  });
+  var actions = {
+    initMap: function(data) { safe(initMap.bind(null, data)) },
+    addMarker: function(data) { safe(addMarker.bind(null, data, app)) },
+    addMarkers: function(markers) { safe(addMarkers.bind(null, markers, app)) },
+    updateIcon: function(icon) { safe(updateIcon.bind(null, icon)) },
+    updateIcons: function(icons) { safe(updateIcons.bind(null, icons)) }
+  }
 
-  app.ports.addMarker.subscribe(function(markerData) {
-    addMarker(markerData, app)
-  });
-
-  app.ports.addMarkers.subscribe(function(markers) {
-    markers.forEach(function(marker) {
-      addMarker(marker, app);
-    });
-  });
-
-  app.ports.updateIcon.subscribe(updateIcon);
-
-  app.ports.updateIcons.subscribe(function(iconsData) {
-    iconsData.forEach(function(iconData) {
-      updateIcon(iconData);
-    });
+  Object.keys(actions).forEach(function(action) {
+    app.ports[action].subscribe(actions[action]);
   });
 }(window));

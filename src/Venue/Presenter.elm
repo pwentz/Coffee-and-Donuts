@@ -1,4 +1,4 @@
-module Venue.Presenter exposing (presentWithDefault)
+module Venue.Presenter exposing (withDefault)
 
 import App.Model exposing (Model)
 import Error.View as ErrView exposing (ViewResult)
@@ -10,8 +10,8 @@ import Util
 import Venue.Model
 
 
-presentWithDefault : Html a -> ViewResult a -> Html a
-presentWithDefault defaultView viewResult =
+withDefault : Html a -> ViewResult a -> Html a
+withDefault defaultView viewResult =
     let
         onCurrentVenue venue =
             div

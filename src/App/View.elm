@@ -7,8 +7,8 @@ import Public
 import Styles
 
 
-defaultVenueView : Html a
-defaultVenueView =
+defaultVenue : Html a
+defaultVenue =
     div
         [ Styles.defaultContent ]
         [ div
