@@ -1,4 +1,4 @@
-module Msg
+module App.Msg
     exposing
         ( MarkerEvent
         , Msg

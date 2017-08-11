@@ -1,22 +1,23 @@
-module Command.Model exposing (CommandResult, apply, init)
+module Command.Model exposing (CommandResult, applyUpdate, init)
 
 import App.Model exposing (Model)
-import Msg exposing (Msg, Success)
+import App.Msg as Msg exposing (Msg, Success)
+import Error.Model exposing (Err)
 
 
 type CommandResult
-    = Successful ( Success, App.Model.Data )
-    | Failure Model
+    = Failure Err
+    | Successful ( Success, App.Model.Data )
 
 
-apply : (( Success, App.Model.Data ) -> ( Model, Cmd Msg )) -> CommandResult -> ( Model, Cmd Msg )
-apply f commandRes =
+applyUpdate : (( Success, App.Model.Data ) -> ( Model, Cmd Msg )) -> CommandResult -> ( Model, Cmd Msg )
+applyUpdate f commandRes =
     case commandRes of
         Successful data ->
             f data
 
-        Failure model ->
-            model ! []
+        Failure err ->
+            App.Model.initWithError err ! []
 
 
 init : Msg -> Model -> CommandResult
@@ -27,6 +28,6 @@ init msg model =
                 success succ =
                     Successful ( succ, data )
             in
-            Msg.applyWithDefault success (Failure << App.Model.initWithError) msg
+            Msg.applyWithDefault success Failure msg
     in
-    App.Model.applyWithDefault onData (\_ -> Failure model) model
+    App.Model.applyWithDefault onData Failure model

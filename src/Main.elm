@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import App.Model exposing (Model)
+import App.Msg exposing (Msg)
 import App.Update
 import App.View
 import Command.Actions as Actions
@@ -10,7 +11,6 @@ import Dict
 import Error.View
 import Html exposing (Html)
 import Leaflet as L
-import Msg exposing (Msg)
 import Venue.Presenter
 
 
@@ -24,7 +24,7 @@ view =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     Command.Model.init msg model
-        |> Command.Model.apply App.Update.update
+        |> Command.Model.applyUpdate App.Update.update
 
 
 main =

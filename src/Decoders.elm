@@ -1,9 +1,9 @@
 module Decoders exposing (..)
 
+import App.Msg as Msg exposing (MarkerEvent, Msg)
 import Error.Model as Err
 import Json.Decode as Json
 import Json.Encode exposing (Value)
-import Msg exposing (MarkerEvent, Msg)
 import Result
 import Venue.Model
 

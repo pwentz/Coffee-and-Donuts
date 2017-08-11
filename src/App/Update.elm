@@ -1,12 +1,13 @@
 module App.Update exposing (update)
 
 import App.Model exposing (Coords, Model)
+import App.Msg as Msg exposing (Msg)
 import Command.Actions as Actions
 import Dict
 import Error.Model as Err
 import Leaflet as L
-import Msg exposing (Msg)
 import Public
+import Tuple
 import Venue.Model
 
 
@@ -73,11 +74,11 @@ update ( msg, { venueMarkers, fullVenues, location, currentVenue } as payload ) 
                                 |> List.filterMap .markerId
                                 |> List.map assignCurrentIcon
                     in
-                    case Dict.get targetVenue.venueId payload.fullVenues of
+                    case Dict.get (.venueId targetVenue) fullVenues of
                         Nothing ->
                             App.Model.init payload
                                 ! [ L.updateIcons markers
-                                  , Actions.fetchVenueData targetVenue.venueId
+                                  , Actions.fetchVenueData (.venueId targetVenue)
                                   ]
 
                         venue ->
@@ -98,19 +99,16 @@ update ( msg, { venueMarkers, fullVenues, location, currentVenue } as payload ) 
 
         Msg.NewMarker { id, lat, lng } ->
             let
-                targetVenue =
-                    venueMarkers
-                        |> Dict.get ( lat, lng )
-            in
-            case targetVenue of
-                Nothing ->
-                    App.Model.initWithError Err.FetchVenues ! []
-
-                Just v ->
+                updateWithId venue =
                     App.Model.init
                         { payload
                             | venueMarkers =
                                 venueMarkers
-                                    |> Dict.insert ( lat, lng ) { v | markerId = Just id }
+                                    |> Dict.insert ( lat, lng ) { venue | markerId = Just id }
                         }
                         ! []
+            in
+            Dict.get ( lat, lng ) venueMarkers
+                |> Maybe.map updateWithId
+                |> Maybe.withDefault
+                    (App.Model.initWithError Err.FetchVenues ! [])
