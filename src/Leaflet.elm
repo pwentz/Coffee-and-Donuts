@@ -1,6 +1,9 @@
 port module Leaflet exposing (..)
 
+import App.Model exposing (Coords)
 import Json.Encode exposing (Value)
+import Public
+import Venue.Model
 
 
 type alias Icon =
@@ -10,8 +13,7 @@ type alias Icon =
 
 
 type alias Marker =
-    { id : Int
-    , lat : Float
+    { lat : Float
     , lng : Float
     , icon : Maybe Icon
     , draggable : Bool
@@ -60,3 +62,43 @@ port onMarkerCreation : (Value -> msg) -> Sub msg
 
 
 port onMarkerEvent : (Value -> msg) -> Sub msg
+
+
+port jsError : (Value -> msg) -> Sub msg
+
+
+defaultMap : Coords -> String -> MapData
+defaultMap ( lat, lng ) mapId =
+    { divId = mapId
+    , lat = lat
+    , lng = lng
+    , zoom = 17
+    , tileLayer = "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=" ++ Public.mapboxToken
+    , tileLayerOptions =
+        { maxZoom = 24
+        , id = "mapbox.streets"
+        , accessToken = Public.mapboxToken
+        }
+    }
+
+
+defaultMarker : { venue : ( Coords, Venue.Model.Marker ), events : List MarkerEvent, display : String } -> Marker
+defaultMarker { venue, events, display } =
+    let
+        ( ( lat, lng ), { venueId, markerId, name } ) =
+            venue
+    in
+    { lat = lat
+    , lng = lng
+    , icon = Just (icon display)
+    , draggable = False
+    , popup = Just name
+    , events = events
+    }
+
+
+icon : String -> Icon
+icon iconUrl =
+    { url = iconUrl
+    , size = { height = 35, width = 35 }
+    }

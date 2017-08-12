@@ -1,21 +1,48 @@
-module VenuePresenter exposing (..)
+module Venue.Presenter exposing (withDefault)
 
+import App.Model exposing (Model)
+import Error.View as ErrView exposing (ViewResult)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models exposing (FullVenueData)
 import Public
 import Styles
 import Util
+import Venue.Model
 
 
-name : FullVenueData -> Html msg
+withDefault : Html a -> ViewResult a -> Html a
+withDefault defaultView viewResult =
+    let
+        onCurrentVenue venue =
+            div
+                [ Styles.contentRow ]
+                [ banner venue
+                , div
+                    [ Styles.contentColumn ]
+                    [ name venue
+                    , location venue
+                    ]
+                , hours venue
+                , rating venue
+                , attributes venue
+                ]
+
+        venueView appData =
+            appData.currentVenue
+                |> Maybe.map onCurrentVenue
+                |> Maybe.withDefault defaultView
+    in
+    ErrView.apply venueView viewResult
+
+
+name : Venue.Model.Venue -> Html msg
 name venue =
     h1
         [ Styles.venueHeader ]
         [ text venue.name ]
 
 
-banner : FullVenueData -> Html msg
+banner : Venue.Model.Venue -> Html msg
 banner venue =
     let
         getBanner =
@@ -45,7 +72,7 @@ banner venue =
         ]
 
 
-location : FullVenueData -> Html msg
+location : Venue.Model.Venue -> Html msg
 location venue =
     let
         phoneNumber =
@@ -68,7 +95,7 @@ location venue =
     locationData
 
 
-hours : FullVenueData -> Html msg
+hours : Venue.Model.Venue -> Html msg
 hours venue =
     let
         popular =
@@ -91,7 +118,7 @@ hours venue =
         ]
 
 
-rating : FullVenueData -> Html msg
+rating : Venue.Model.Venue -> Html msg
 rating venue =
     let
         rating =
@@ -113,7 +140,7 @@ rating venue =
         rating
 
 
-attributes : FullVenueData -> Html msg
+attributes : Venue.Model.Venue -> Html msg
 attributes venue =
     let
         attrs =

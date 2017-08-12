@@ -1,37 +1,53 @@
 module Main exposing (..)
 
-import Commands as C
+import App.Model exposing (Model)
+import App.Msg exposing (Msg)
+import App.Update
+import App.View
+import Command.Actions as Actions
+import Command.Model
 import Decoders as Decode
 import Dict
-import Html
+import Error.View
+import Html exposing (Html)
 import Leaflet as L
-import Messages exposing (Msg)
-import Models exposing (Model)
-import Update
-import View
+import Venue.Presenter
+
+
+view : Model -> Html a
+view =
+    App.View.view
+        << Venue.Presenter.withDefault App.View.defaultVenue
+        << Error.View.present
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    Command.Model.init msg model
+        |> Command.Model.applyUpdate App.Update.update
 
 
 main =
     Html.program
         { init = init
-        , view = View.view
-        , update = Update.update
+        , view = view
+        , update = update
         , subscriptions =
             \_ ->
                 Sub.batch
                     [ L.onMarkerCreation Decode.decodeOnMarkerCreation
                     , L.onMarkerEvent Decode.decodeMarkerEvent
+                    , L.jsError Decode.decodeJsError
                     ]
         }
 
 
 init : ( Model, Cmd Msg )
 init =
-    { shortVenues = []
-    , fullVenues = Dict.empty
-    , waitingMsg = ""
-    , location = { lat = 0.0, lng = 0.0 }
-    , currentVenue = Nothing
-    , leafletMarkers = []
-    }
-        ! [ C.getLocation ]
+    App.Model.init
+        { venueMarkers = Dict.empty
+        , fullVenues = Dict.empty
+        , location = ( 0, 0 )
+        , currentVenue = Nothing
+        }
+        ! [ Actions.getLocation ]

@@ -1,6 +1,7 @@
 "use strict";
 
 var myMap;
+var app;
 
 function initMap(data) {
   myMap = L.map(data.divId)
@@ -10,7 +11,7 @@ function initMap(data) {
    .addTo(myMap);
 };
 
-function addMarker(options, app) {
+function addMarker(options) {
   var icon = options.icon && { iconUrl: options.icon.url,
                                iconSize: [options.icon.size.height, options.icon.size.width] }
 
@@ -45,7 +46,11 @@ function addMarker(options, app) {
     });
   };
 
-  app.ports.onMarkerCreation.send(marker._leaflet_id)
+  app.ports.onMarkerCreation.send({
+    id: marker._leaflet_id,
+    lat: options.lat,
+    lng: options.lng
+  });
 };
 
 
@@ -59,30 +64,24 @@ function updateIcon(options) {
   targetMarker.setIcon(L.icon(icon));
 };
 
-
 (function(window) {
   var node = document.getElementById("app");
-  var app = Elm.Main.embed(node);
+  app = Elm.Main.embed(node);
+  var safe = function(fn, data) {
+      try { fn(data) }
+      catch (err) { app.ports.jsError.send(err.message) }
+  };
 
-  app.ports.initMap.subscribe(function(mapData) {
-    initMap(mapData);
-  });
+  var actions = {
+    initMap: initMap,
+    addMarker: addMarker,
+    addMarkers: function(markers) { markers.forEach(addMarker); },
+    updateIcon: updateIcon,
+    updateIcons: function(icons) { icons.forEach(updateIcon); }
+  };
 
-  app.ports.addMarker.subscribe(function(markerData) {
-    addMarker(markerData, app)
-  });
-
-  app.ports.addMarkers.subscribe(function(markers) {
-    markers.forEach(function(marker) {
-      addMarker(marker, app);
-    });
-  });
-
-  app.ports.updateIcon.subscribe(updateIcon);
-
-  app.ports.updateIcons.subscribe(function(iconsData) {
-    iconsData.forEach(function(iconData) {
-      updateIcon(iconData);
-    });
+  Object.keys(actions).forEach(function(action) {
+    var safeAction = safe.bind(null, actions[action]);
+    app.ports[action].subscribe(safeAction);
   });
 }(window));
